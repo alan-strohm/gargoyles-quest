@@ -113,7 +113,7 @@ export class WorldMap {
         }
     }
 
-    public update(delta: number): void {
+    public update(): void {
         // Update any animated tiles or effects
     }
 

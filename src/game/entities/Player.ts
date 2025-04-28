@@ -18,7 +18,6 @@ export class Player {
     public powers: Power[] = [];
     
     private speed: number = 5;
-    private isMoving: boolean = false;
 
     constructor(gameContainer: Container, world: World) {
         this.container = new Container();
@@ -46,7 +45,7 @@ export class Player {
         this.container.position.set(x, y);
     }
 
-    public update(delta: number): void {
+    public update(): void {
         // Update sprite position to match physics body
         const pos = this.physicsBody.position;
         this.container.position.set(pos.x, pos.y);

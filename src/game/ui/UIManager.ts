@@ -26,7 +26,7 @@ export class UIManager {
     public update(state: UIState): void {
         this.updateStats(state);
         this.updateInventory(state);
-        this.updatePowers(state);
+        this.updatePowers();
     }
 
     private createStatsUI(): void {
@@ -95,15 +95,8 @@ export class UIManager {
         // Update inventory items when implemented
     }
 
-    private updatePowers(state: UIState): void {
+    private updatePowers(): void {
         const powersList = document.getElementById('powers-list')!;
-        powersList.innerHTML = state.activePowers
-            .map(power => `
-                <div class="power-item ${power.isActive ? 'active' : ''}">
-                    <h3>${power.name}</h3>
-                    <p>${power.description}</p>
-                </div>
-            `)
-            .join('');
+        powersList.innerHTML = ''; // Clear the list for now
     }
 } 
