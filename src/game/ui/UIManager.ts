@@ -25,7 +25,7 @@ export class UIManager {
 
     public update(state: UIState): void {
         this.updateStats(state);
-        this.updateInventory(state);
+        this.updateInventory();
         this.updatePowers();
     }
 
@@ -91,7 +91,7 @@ export class UIManager {
         coinsValue.textContent = state.playerCoins.toString();
     }
 
-    private updateInventory(state: UIState): void {
+    private updateInventory(): void {
         // Update inventory items when implemented
     }
 

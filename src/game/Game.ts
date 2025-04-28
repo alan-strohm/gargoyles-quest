@@ -44,8 +44,8 @@ export class Game {
         Engine.update(this.physicsEngine, delta * 16.67); // Convert to approximate milliseconds
 
         // Update game entities
-        this.player.update(delta);
-        this.worldMap.update(delta);
+        this.player.update();
+        this.worldMap.update();
 
         // Update UI
         this.uiManager.update({
