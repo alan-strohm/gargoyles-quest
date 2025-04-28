@@ -1,4 +1,4 @@
-import { Container, Sprite } from 'pixi.js';
+import { Container, Graphics } from 'pixi.js';
 import { World, Bodies, Body } from 'matter-js';
 
 export interface Power {
@@ -10,7 +10,7 @@ export interface Power {
 
 export class Player {
     private container: Container;
-    private sprite: Sprite;
+    private graphics: Graphics;
     private physicsBody: Body;
     
     public health: number = 100;
@@ -23,10 +23,45 @@ export class Player {
         this.container = new Container();
         gameContainer.addChild(this.container);
 
-        // Create temporary sprite (replace with actual gargoyle sprite)
-        this.sprite = Sprite.from('placeholder-gargoyle.png');
-        this.sprite.anchor.set(0.5);
-        this.container.addChild(this.sprite);
+        // Create a playful pink gargoyle
+        this.graphics = new Graphics();
+        
+        // Main body (pink)
+        this.graphics.beginFill(0xFFB6C1); // Light pink
+        this.graphics.drawRect(-16, -8, 32, 24); // Body
+        this.graphics.endFill();
+        
+        // Head
+        this.graphics.beginFill(0xFFB6C1);
+        this.graphics.drawCircle(0, -16, 12); // Head
+        this.graphics.endFill();
+        
+        // Horns
+        this.graphics.beginFill(0xFF69B4); // Hot pink for horns
+        this.graphics.moveTo(-8, -24);
+        this.graphics.lineTo(-4, -28);
+        this.graphics.lineTo(0, -24);
+        this.graphics.endFill();
+        
+        this.graphics.beginFill(0xFF69B4);
+        this.graphics.moveTo(8, -24);
+        this.graphics.lineTo(4, -28);
+        this.graphics.lineTo(0, -24);
+        this.graphics.endFill();
+        
+        // Eyes
+        this.graphics.beginFill(0x000000);
+        this.graphics.drawCircle(-4, -18, 2); // Left eye
+        this.graphics.drawCircle(4, -18, 2);  // Right eye
+        this.graphics.endFill();
+        
+        // Wings
+        this.graphics.beginFill(0xFFB6C1);
+        this.graphics.drawEllipse(-20, 0, 8, 12); // Left wing
+        this.graphics.drawEllipse(20, 0, 8, 12);  // Right wing
+        this.graphics.endFill();
+        
+        this.container.addChild(this.graphics);
 
         // Create physics body
         this.physicsBody = Bodies.rectangle(0, 0, 32, 32, {
