@@ -8,11 +8,19 @@
     flake-utils,
   }:
     flake-utils.lib.eachDefaultSystem (system: let
-      pkgs = nixpkgs.legacyPackages.${system};
+      pkgs = import nixpkgs {
+        inherit system;
+        config.allowUnfree = true;
+      };
+      gargoyles-quest = pkgs.callPackage ./package.nix {};
     in {
-      packages = rec {
-        gargoyles-quest = pkgs.callPackage ./package.nix {};
+      packages = {
+        inherit gargoyles-quest;
         default = gargoyles-quest;
+      };
+      devShells.default = pkgs.mkShell {
+        inputsFrom = [ gargoyles-quest ];
+        packages = [ pkgs.tiled pkgs.texturepacker ];
       };
     });
 }
