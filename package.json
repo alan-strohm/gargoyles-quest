@@ -12,7 +12,7 @@
     "url": "git+https://github.com/alan-strohm/gargoyles-quest.git"
   },
   "author": "Louis Strohm",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/alan-strohm/gargoyles-quest/issues"
   },
