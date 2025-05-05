@@ -1,0 +1,6 @@
+[Desktop Entry]
+Version=1.4
+Type=Application
+Terminal=false
+Name=Gargoyle's Quest
+Exec=gargoyle

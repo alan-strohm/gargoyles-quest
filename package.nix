@@ -31,6 +31,10 @@ buildNpmPackage rec {
   postInstall = ''
     makeWrapper ${electron}/bin/electron $out/bin/${pname} \
       --add-flags $out/lib/node_modules/${pname}/main.js
+    mkdir -p $out/share/applications
+    substitute ./assets/gargoyle.desktop \
+      $out/share/applications/gargoyle.desktop \
+      --replace-fail Exec=gargoyle Exec=$out/bin/${pname}
   '';
 
 }
