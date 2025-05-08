@@ -49,4 +49,4 @@ The built files will be in the `dist` directory, ready for deployment to Cloudfl
 
 ## License
 
-MIT 
+MIT

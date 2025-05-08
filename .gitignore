@@ -34,4 +34,8 @@ Thumbs.db
 # TypeScript
 *.tsbuildinfo 
 
+# nix-direnv
 .direnv
+
+# nix result
+result
