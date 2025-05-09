@@ -27,6 +27,15 @@ export class Preloader extends Scene {
     this.load.setPath("assets");
 
     this.load.image("logo", "logo.png");
+    this.load.image("tiles", "./tilesets/tuxmon-sample-32px-extruded.png");
+    this.load.tilemapTiledJSON("map", "./tilemaps/tuxemon-town.json");
+
+    // An atlas is a way to pack multiple images together into one texture. I'm using it to load all
+    // the player animations (walking left, walking right, etc.) in one image. For more info see:
+    //  https://labs.phaser.io/view.html?src=src/animation/texture%20atlas%20animation.js
+    // If you don't use an atlas, you can do the same thing with a spritesheet, see:
+    //  https://labs.phaser.io/view.html?src=src/animation/single%20sprite%20sheet.js
+    this.load.atlas("atlas", "./atlas/atlas.png", "./atlas/atlas.json");
   }
 
   create() {
