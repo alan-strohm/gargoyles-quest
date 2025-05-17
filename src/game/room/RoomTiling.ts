@@ -2,8 +2,8 @@
  * Represents a rectangular room with a door on the bottom wall.
  *
  * Assumptions:
- * - width >= 5 (to ensure room is large enough for door and walls)
- * - doorPosition >= 2 && < width-2 (to ensure door is not in a corner)
+ * - width >= 6 (to ensure room is large enough for door and walls)
+ * - doorPosition >= 2 && < width-3 (to ensure door is not in a corner and has room for second tile)
  * - overHeight >= 3 + sideHeight (to ensure room is large enough for walls and door)
  * - sideHeight >= 1 (height of wall tiles below the room, default is 1)
  */
@@ -11,7 +11,7 @@ export interface RoomDescription {
   width: number;
   overHeight: number;
   sideHeight: number;
-  doorPosition: number; // Position of door on bottom wall (0-based, from left)
+  doorPosition: number; // Position of left-most tile of the two-tile door
 }
 
 export interface TileTypes {
@@ -42,11 +42,11 @@ export class RoomTiling {
 
   generateTiles(room: RoomDescription): number[] {
     // Validate room dimensions
-    if (room.width < 5) {
-      throw new Error('Room width must be at least 5');
+    if (room.width < 6) {
+      throw new Error('Room width must be at least 6');
     }
-    if (room.doorPosition < 2 || room.doorPosition >= room.width - 2) {
-      throw new Error('Door position must be at least 2 and less than width-2');
+    if (room.doorPosition < 2 || room.doorPosition >= room.width - 3) {
+      throw new Error('Door position must be at least 2 and less than width-3');
     }
     if (room.sideHeight < 1) {
       throw new Error('Side height must be at least 1');
@@ -98,9 +98,9 @@ export class RoomTiling {
         // Edge and door positions
         const isLeftEdge = x === 0;
         const isRightEdge = x === room.width - 1;
-        const isDoor = x === room.doorPosition;
+        const isDoor = x === room.doorPosition || x === room.doorPosition + 1;
         const isNextToDoorLeft = x === room.doorPosition - 1;
-        const isNextToDoorRight = x === room.doorPosition + 1;
+        const isNextToDoorRight = x === room.doorPosition + 2;
         const isDoorPath = isDoor && (isBottomOverBorder || y >= room.overHeight);
 
         if (isDoorPath) {
@@ -150,8 +150,8 @@ export class RoomTiling {
               // Vertical lines next to door
               result[getIndex(x, y)] = this.tiles.sideRightWall;
             } else if (isNextToDoorRight) {
-                // Vertical lines next to door
-                result[getIndex(x, y)] = this.tiles.sideLeftWall;
+              // Vertical lines next to door
+              result[getIndex(x, y)] = this.tiles.sideLeftWall;
             } else {
               // Fill spaces between walls
               result[getIndex(x, y)] = this.tiles.sideMidWall;
