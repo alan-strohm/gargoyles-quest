@@ -62,7 +62,7 @@ describe('RoomTiling', () => {
     [tiles.sideBottomRightCorner]: '┘'
   };
 
-  it('should generate correct tiles for a 5x4 room with default sideHeight', () => {
+  it('should generate correct tiles for the smallest possible room', () => {
     const room: RoomDescription = {
       width: 5,
       overHeight: 4,
@@ -85,7 +85,7 @@ describe('RoomTiling', () => {
     expect(tilesToAscii(generatedTiles, room.width, tileMap)).toBe(expectedTiles);
   });
 
-  it('should generate correct tiles for a 5x5 room with sideHeight of 2', () => {
+  it('should generate correct tiles for the smallest possible room with sideHeight of 2', () => {
     const room: RoomDescription = {
       width: 5,
       overHeight: 5,
@@ -110,7 +110,7 @@ describe('RoomTiling', () => {
     expect(tilesToAscii(generatedTiles, room.width, tileMap)).toBe(expectedTiles);
   });
 
-  it('should generate correct tiles for a 7x6 room with sideHeight of 2', () => {
+  it('should generate correct tiles the smallest room with space on either side of the door and sideHeight of 2', () => {
     const room: RoomDescription = {
       width: 7,
       overHeight: 6,
@@ -136,7 +136,7 @@ describe('RoomTiling', () => {
     expect(tilesToAscii(generatedTiles, room.width, tileMap)).toBe(expectedTiles);
   });
 
-  it('should generate correct tiles for a 7x6 room with sideHeight of 3', () => {
+  it('should generate correct tiles for a room with sideHeight of 3 and the door as far left as possible', () => {
     const room: RoomDescription = {
       width: 7,
       overHeight: 6,
@@ -164,7 +164,7 @@ describe('RoomTiling', () => {
   });
 
   describe('error handling', () => {
-    it('should throw error for width < 5', () => {
+    it('should throw error for widths that are too small', () => {
       const room: RoomDescription = {
         width: 4,
         overHeight: 4,
@@ -176,7 +176,7 @@ describe('RoomTiling', () => {
       expect(() => tiling.generateTiles(room)).toThrow('Room width must be at least 5');
     });
 
-    it('should throw error for doorPosition < 2', () => {
+    it('should throw error for door positions that are too far to the left', () => {
       const room: RoomDescription = {
         width: 5,
         overHeight: 4,
@@ -188,7 +188,7 @@ describe('RoomTiling', () => {
       expect(() => tiling.generateTiles(room)).toThrow('Door position must be at least 2 and less than width-2');
     });
 
-    it('should throw error for doorPosition >= width-2', () => {
+    it('should throw error for door positions that are too far right', () => {
       const room: RoomDescription = {
         width: 5,
         overHeight: 4,
@@ -200,7 +200,7 @@ describe('RoomTiling', () => {
       expect(() => tiling.generateTiles(room)).toThrow('Door position must be at least 2 and less than width-2');
     });
 
-    it('should throw error for sideHeight < 1', () => {
+    it('should throw error for sideHeights that are too small', () => {
       const room: RoomDescription = {
         width: 5,
         overHeight: 4,
@@ -212,11 +212,23 @@ describe('RoomTiling', () => {
       expect(() => tiling.generateTiles(room)).toThrow('Side height must be at least 1');
     });
 
-    it('should throw error for overHeight < 3 + sideHeight', () => {
+    it('should throw error for overHeights too small', () => {
       const room: RoomDescription = {
         width: 5,
         overHeight: 3, // Should be at least 4 (3 + sideHeight of 1)
         sideHeight: 1,
+        doorPosition: 2
+      };
+
+      const tiling = new RoomTiling(tiles);
+      expect(() => tiling.generateTiles(room)).toThrow('Over height must be at least 3 + sideHeight');
+    });
+
+    it('should throw error for sideHeights that are too large', () => {
+      const room: RoomDescription = {
+        width: 5,
+        overHeight: 4,
+        sideHeight: 2,
         doorPosition: 2
       };
 
