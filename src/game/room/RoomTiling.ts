@@ -146,9 +146,12 @@ export class RoomTiling {
             // Non-bottom side section rows - vertical walls and interior
             if (isLeftEdge) result[getIndex(x, y)] = this.tiles.sideLeftWall;
             else if (isRightEdge) result[getIndex(x, y)] = this.tiles.sideRightWall;
-            else if (isNextToDoorLeft || isNextToDoorRight) {
+            else if (isNextToDoorLeft) {
               // Vertical lines next to door
-              result[getIndex(x, y)] = this.tiles.sideLeftWall;
+              result[getIndex(x, y)] = this.tiles.sideRightWall;
+            } else if (isNextToDoorRight) {
+                // Vertical lines next to door
+                result[getIndex(x, y)] = this.tiles.sideLeftWall;
             } else {
               // Fill spaces between walls
               result[getIndex(x, y)] = this.tiles.sideMidWall;

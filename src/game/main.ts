@@ -2,7 +2,7 @@ import { Boot } from "./scenes/Boot";
 import { GameOver } from "./scenes/GameOver";
 import { Game as MainGame } from "./scenes/Game";
 import { MainMenu } from "./scenes/MainMenu";
-import { RandomRoom } from "./scenes/RandomRoom";
+import { RandomHouse } from "./scenes/RandomHouse";
 import { AUTO, Game } from "phaser";
 import { Preloader } from "./scenes/Preloader";
 
@@ -21,7 +21,7 @@ const config: Phaser.Types.Core.GameConfig = {
     },
   },
   backgroundColor: "#028af8",
-  scene: [Boot, Preloader, MainMenu, MainGame, RandomRoom, GameOver],
+  scene: [Boot, Preloader, MainMenu, MainGame, RandomHouse, GameOver],
 };
 
 const StartGame = (parent: string) => {

@@ -29,6 +29,7 @@ export class Preloader extends Scene {
     this.load.image("logo", "logo.png");
     this.load.image("tiles", "./tilesets/tuxmon-sample-32px-extruded.png");
     this.load.image("walls", "./tilesets/core_indoor_walls.png");
+    this.load.image("floors", "./tilesets/core_indoor_floors.png");
     this.load.tilemapTiledJSON("map", "./tilemaps/tuxemon-town.json");
 
     // An atlas is a way to pack multiple images together into one texture. I'm using it to load all
@@ -45,6 +46,6 @@ export class Preloader extends Scene {
 
     //  Move to the MainMenu. You could also swap this for a Scene Transition, such as a camera fade.
     // this.scene.start("MainMenu");
-    this.scene.start("RandomRoom");
+    this.scene.start("RandomHouse");
   }
 }
