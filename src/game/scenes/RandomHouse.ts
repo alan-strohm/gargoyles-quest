@@ -3,8 +3,10 @@ import { RoomTiling, RoomDescription, TileTypes } from "../room/RoomTiling";
 
 // Base tile ID for wall tiles - adjust this to match your tileset
 const DEFAULT_WALL_BASE_ID = 0;
+const DEFAULT_FLOOR_ID = 100;
 
 export class RandomHouse extends Scene {
+  private wallLayer: Phaser.Tilemaps.TilemapLayer | null = null;
   private groundLayer: Phaser.Tilemaps.TilemapLayer | null = null;
 
   constructor() {
@@ -22,7 +24,7 @@ export class RandomHouse extends Scene {
       overTopWall: wallBaseId + 1,
       overTopRightCorner: wallBaseId + 2,
       overLeftWall: wallBaseId + 46,
-      floor: wallBaseId + 47,
+      floor: -1,
       overRightWall: wallBaseId + 48,
       overBottomLeftCorner: wallBaseId + 92,
       overBottomWall: wallBaseId + 93,
@@ -40,32 +42,69 @@ export class RandomHouse extends Scene {
     };
   }
 
-  create() {
-    // Generate random room parameters
-    // sideHeight: 1 (60%), 2 (30%), 3 (10%)
-    const sideHeightRoll = Math.random();
-    const sideHeight = sideHeightRoll < 0.6 ? 1 : (sideHeightRoll < 0.9 ? 2 : 3);
+  /**
+   * Calculates floor dimensions using prime factorization to find good room proportions.
+   * @param minFloorArea Minimum floor area (exclusive)
+   * @param maxFloorArea Maximum floor area (exclusive)
+   * @returns Object containing floorRows and floorCols
+   */
+  private calculateFloorDimensions(minFloorArea: number, maxFloorArea: number): { floorRows: number, floorCols: number } {
+    // Choose a target area within the range
+    const targetArea = Math.floor(Math.random() * (maxFloorArea - minFloorArea - 1)) + minFloorArea + 1;
 
-    // Generate floor dimensions that satisfy area constraints
-    // Floor area = (overHeight-3-sideHeight) * (width-2) must be between 10 and 50
-    let floorRowsCalc: number;
-    let floorColsCalc: number;
-    let attempts = 0;
-    const MAX_ATTEMPTS = 10;
-
-    do {
-      // Minimum floor rows is 1 (overHeight - 3 - sideHeight >= 1)
-      floorRowsCalc = Math.floor(Math.random() * 5) + 1;
-      // Minimum floor columns is 3 (width - 2 >= 3)
-      floorColsCalc = Math.floor(Math.random() * 8) + 3;
-      attempts++;
-    } while ((floorRowsCalc * floorColsCalc <= 10 || floorRowsCalc * floorColsCalc >= 50) && attempts < MAX_ATTEMPTS);
-
-    // If we couldn't find valid dimensions, use defaults
-    if (attempts >= MAX_ATTEMPTS) {
-      floorRowsCalc = 3;
-      floorColsCalc = 5;
+    // Find factors of the target area that are >= 3 (minimum width-2)
+    const factors: number[] = [];
+    for (let i = 3; i <= Math.sqrt(targetArea); i++) {
+      if (targetArea % i === 0) {
+        factors.push(i);
+      }
     }
+
+    if (factors.length > 0) {
+      // Use a random factor for one dimension
+      const factor = factors[Math.floor(Math.random() * factors.length)];
+      return {
+        floorRows: factor,
+        floorCols: targetArea / factor
+      };
+    }
+
+    // If no good factors found, try to find the closest number with good factors
+    for (let offset = 1; offset <= 5; offset++) {
+      const candidates = [targetArea + offset, targetArea - offset];
+      for (const candidate of candidates) {
+        if (candidate >= minFloorArea && candidate <= maxFloorArea) {
+          for (let i = 3; i <= Math.sqrt(candidate); i++) {
+            if (candidate % i === 0) {
+              return {
+                floorRows: i,
+                floorCols: candidate / i
+              };
+            }
+          }
+        }
+      }
+    }
+
+    // Fallback: use square root as a last resort
+    const side = Math.ceil(Math.sqrt(targetArea));
+    return {
+      floorRows: side,
+      floorCols: Math.ceil(targetArea / side)
+    };
+  }
+
+  create() {
+    // Set black background
+    this.cameras.main.setBackgroundColor('#000000');
+
+    // Generate random room parameters
+    // sideHeight: 2 (60%), 1 (30%), 3 (10%)
+    const sideHeightRoll = Math.random();
+    const sideHeight = sideHeightRoll < 0.6 ? 2 : (sideHeightRoll < 0.9 ? 1 : 3);
+
+    // Calculate floor dimensions
+    const { floorRows: floorRowsCalc, floorCols: floorColsCalc } = this.calculateFloorDimensions(50, 150);
 
     // Calculate final room dimensions
     const width = floorColsCalc + 2;
@@ -90,16 +129,17 @@ export class RandomHouse extends Scene {
       height: overHeight + sideHeight,
     });
 
-    // Add tileset and create layer
     const walls = map.addTilesetImage("walls", undefined, 16, 16, 0, 0);
-    if (!walls) {
-      console.error("Failed to load walls tileset");
+    const floors = map.addTilesetImage("floors", undefined, 16, 16, 0, 0);
+    if (!walls || !floors) {
+      console.error("Failed to load tilesets");
       return;
     }
 
-    this.groundLayer = map.createBlankLayer("Ground", walls);
-    if (!this.groundLayer) {
-      console.error("Failed to create ground layer");
+    this.groundLayer = map.createBlankLayer("Ground", floors);
+    this.wallLayer = map.createBlankLayer("Walls", walls);
+    if (!this.wallLayer || !this.groundLayer) {
+      console.error("Failed to create layers");
       return;
     }
 
@@ -112,13 +152,26 @@ export class RandomHouse extends Scene {
     for (let y = 0; y < overHeight + sideHeight; y++) {
       for (let x = 0; x < width; x++) {
         const tileId = generatedTiles[y * width + x];
-        this.groundLayer.putTileAt(tileId, x, y);
+        if (tileId === -1) {
+          this.groundLayer.putTileAt(DEFAULT_FLOOR_ID, x, y);
+        } else {
+          this.wallLayer.putTileAt(tileId, x, y);
+        }
       }
     }
 
-    // Set up camera
-    const camera = this.cameras.main;
-    camera.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
-    camera.centerOn(width * 8, (overHeight + sideHeight) * 8); // Center on middle of room
+    // Center the room in the game canvas
+    const gameWidth = this.scale.width;
+    const gameHeight = this.scale.height;
+    const roomWidth = width * 16;  // tileWidth is 16
+    const roomHeight = (overHeight + sideHeight) * 16;  // tileHeight is 16
+
+    // Calculate the position to center the room
+    const x = (gameWidth - roomWidth) / 2;
+    const y = (gameHeight - roomHeight) / 2;
+
+    // Set the layer's position to center it
+    this.wallLayer.setPosition(x, y);
+    this.groundLayer.setPosition(x, y);
   }
 }
