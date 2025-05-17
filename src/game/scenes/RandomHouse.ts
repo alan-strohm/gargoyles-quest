@@ -1,5 +1,6 @@
 import { Scene } from "phaser";
 import { RoomTiling, RoomDescription, TileTypes } from "../room/RoomTiling";
+import { Player } from "../player/Player";
 
 // Base tile ID for wall tiles - adjust this to match your tileset
 const DEFAULT_WALL_BASE_ID = 0;
@@ -8,6 +9,11 @@ const DEFAULT_FLOOR_ID = 100;
 export class RandomHouse extends Scene {
   private wallLayer: Phaser.Tilemaps.TilemapLayer | null = null;
   private groundLayer: Phaser.Tilemaps.TilemapLayer | null = null;
+  private player: Player | null = null;
+  private roomWidth: number = 0;
+  private roomHeight: number = 0;
+  private roomX: number = 0;
+  private roomY: number = 0;
 
   constructor() {
     super("RandomHouse");
@@ -43,7 +49,7 @@ export class RandomHouse extends Scene {
   }
 
   /**
-   * Calculates floor dimensions using prime factorization to find good room proportions.
+   * Calculates floor dimensions using the golden ratio (φ ≈ 1.618) to create aesthetically pleasing room proportions.
    * @param minFloorArea Minimum floor area (exclusive)
    * @param maxFloorArea Maximum floor area (exclusive)
    * @returns Object containing floorRows and floorCols
@@ -52,46 +58,30 @@ export class RandomHouse extends Scene {
     // Choose a target area within the range
     const targetArea = Math.floor(Math.random() * (maxFloorArea - minFloorArea - 1)) + minFloorArea + 1;
 
-    // Find factors of the target area that are >= 3 (minimum width-2)
-    const factors: number[] = [];
-    for (let i = 3; i <= Math.sqrt(targetArea); i++) {
-      if (targetArea % i === 0) {
-        factors.push(i);
-      }
-    }
+    // Using golden ratio (φ ≈ 1.618)
+    const phi = 1.618033988749895;
 
-    if (factors.length > 0) {
-      // Use a random factor for one dimension
-      const factor = factors[Math.floor(Math.random() * factors.length)];
+    // Calculate the shorter side using the golden ratio
+    // If width/height = φ, then height = width/φ
+    // And since width * height = area, we can solve for width:
+    // width * (width/φ) = area
+    // width² = area * φ
+    // width = √(area * φ)
+    const width = Math.sqrt(targetArea * phi);
+    
+    // Round to nearest integer
+    const floorCols = Math.round(width);
+    const floorRows = Math.round(targetArea / floorCols);
+
+    // Ensure dimensions are at least 3 (minimum width-2)
+    if (floorCols < 3 || floorRows < 3) {
       return {
-        floorRows: factor,
-        floorCols: targetArea / factor
+        floorRows: Math.max(3, floorRows),
+        floorCols: Math.max(3, floorCols)
       };
     }
 
-    // If no good factors found, try to find the closest number with good factors
-    for (let offset = 1; offset <= 5; offset++) {
-      const candidates = [targetArea + offset, targetArea - offset];
-      for (const candidate of candidates) {
-        if (candidate >= minFloorArea && candidate <= maxFloorArea) {
-          for (let i = 3; i <= Math.sqrt(candidate); i++) {
-            if (candidate % i === 0) {
-              return {
-                floorRows: i,
-                floorCols: candidate / i
-              };
-            }
-          }
-        }
-      }
-    }
-
-    // Fallback: use square root as a last resort
-    const side = Math.ceil(Math.sqrt(targetArea));
-    return {
-      floorRows: side,
-      floorCols: Math.ceil(targetArea / side)
-    };
+    return { floorRows, floorCols };
   }
 
   create() {
@@ -104,11 +94,11 @@ export class RandomHouse extends Scene {
     const sideHeight = sideHeightRoll < 0.6 ? 2 : (sideHeightRoll < 0.9 ? 1 : 3);
 
     // Calculate floor dimensions
-    const { floorRows: floorRowsCalc, floorCols: floorColsCalc } = this.calculateFloorDimensions(50, 150);
+    const { floorRows, floorCols } = this.calculateFloorDimensions(100, 200);
 
     // Calculate final room dimensions
-    const width = floorColsCalc + 2;
-    const overHeight = floorRowsCalc + 3 + sideHeight;
+    const width = floorCols + 2;
+    const overHeight = floorRows + 3 + sideHeight;
 
     // Generate valid door position (>= 2 and < width-2)
     const doorPosition = Math.floor(Math.random() * (width - 4)) + 2;
@@ -163,15 +153,30 @@ export class RandomHouse extends Scene {
     // Center the room in the game canvas
     const gameWidth = this.scale.width;
     const gameHeight = this.scale.height;
-    const roomWidth = width * 16;  // tileWidth is 16
-    const roomHeight = (overHeight + sideHeight) * 16;  // tileHeight is 16
+    this.roomWidth = width * 16;  // tileWidth is 16
+    this.roomHeight = (overHeight + sideHeight) * 16;  // tileHeight is 16
 
     // Calculate the position to center the room
-    const x = (gameWidth - roomWidth) / 2;
-    const y = (gameHeight - roomHeight) / 2;
+    this.roomX = (gameWidth - this.roomWidth) / 2;
+    this.roomY = (gameHeight - this.roomHeight) / 2;
 
     // Set the layer's position to center it
-    this.wallLayer.setPosition(x, y);
-    this.groundLayer.setPosition(x, y);
+    this.wallLayer.setPosition(this.roomX, this.roomY);
+    this.groundLayer.setPosition(this.roomX, this.roomY);
+
+    // Create player at the doorway
+    const playerX = this.roomX + (doorPosition * 16) + 8; // Center in the doorway
+    const playerY = this.roomY + (overHeight + sideHeight - 1) * 16; // Bottom of the room
+    this.player = new Player(this, playerX, playerY);
+
+    // Set up collision detection
+    this.wallLayer.setCollisionByExclusion([-1]); // Collide with all tiles except empty ones
+    this.physics.add.collider(this.player.getSprite(), this.wallLayer);
+  }
+
+  update(_time: number, _delta: number) {
+    if (this.player) {
+      this.player.update();
+    }
   }
 }
