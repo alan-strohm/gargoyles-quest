@@ -52,6 +52,27 @@ export class Game extends Scene {
     // Watch the player and worldLayer for collisions, for the duration of the scene:
     this.physics.add.collider(this.player.getSprite(), this.worldLayer);
 
+    // Add collision with door objects
+    const doorObjects = map.getObjectLayer("Objects")?.objects.filter(obj => obj.type === "Door") || [];
+
+    for (const doorObj of doorObjects) {
+      if (typeof doorObj.x === 'number' && typeof doorObj.y === 'number') {
+        const doorZone = this.add.zone(doorObj.x, doorObj.y, 32, 16);
+        this.physics.add.existing(doorZone, true);
+        
+        this.physics.add.overlap(
+          this.player.getSprite(),
+          doorZone,
+          () => {
+            // Start the RandomHouse scene
+            this.scene.start('RandomHouse');
+          },
+          undefined,
+          this
+        );
+      }
+    }
+
     const camera = this.cameras.main;
     camera.startFollow(this.player.getSprite());
     camera.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
