@@ -8,7 +8,7 @@ export class Player {
   constructor(scene: Scene, x: number, y: number) {
     // Create the player sprite
     this.sprite = scene.physics.add
-      .sprite(x, y, "atlas", "misa-front")
+      .sprite(x, y, "atlas", "misa-back")
       .setSize(30, 40)
       .setOffset(0, 24);
 

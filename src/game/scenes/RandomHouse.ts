@@ -94,7 +94,7 @@ export class RandomHouse extends Scene {
     const sideHeight = sideHeightRoll < 0.6 ? 2 : (sideHeightRoll < 0.9 ? 1 : 3);
 
     // Calculate floor dimensions
-    const { floorRows, floorCols } = this.calculateFloorDimensions(100, 200);
+    const { floorRows, floorCols } = this.calculateFloorDimensions(150, 400);
 
     // Calculate final room dimensions
     const width = floorCols + 2;
@@ -165,8 +165,8 @@ export class RandomHouse extends Scene {
     this.groundLayer.setPosition(this.roomX, this.roomY);
 
     // Create player at the doorway
-    const playerX = this.roomX + (doorPosition * 16) + 8; // Center in the doorway
-    const playerY = this.roomY + (overHeight + sideHeight - 1) * 16; // Bottom of the room
+    const playerX = this.roomX + (doorPosition * 16) + 16; // Center in the doorway
+    const playerY = this.roomY + (overHeight + sideHeight - 2) * 16; // Bottom of the room
     this.player = new Player(this, playerX, playerY);
 
     // Set up collision detection
