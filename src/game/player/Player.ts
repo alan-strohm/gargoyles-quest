@@ -5,15 +5,7 @@ export class Player {
   private cursors: Phaser.Types.Input.Keyboard.CursorKeys;
   private speed: number = 175;
 
-  constructor(scene: Scene, x: number, y: number) {
-    // Create the player sprite
-    this.sprite = scene.physics.add
-      .sprite(x, y, "atlas", "misa-back")
-      .setSize(30, 40)
-      .setOffset(0, 24);
-
-    // Create the player's walking animations
-    const anims = scene.anims;
+  static createAnimations(anims: Phaser.Animations.AnimationManager) {
     anims.create({
       key: "misa-left-walk",
       frames: anims.generateFrameNames("atlas", {
@@ -58,6 +50,14 @@ export class Player {
       frameRate: 10,
       repeat: -1,
     });
+  }
+
+  constructor(scene: Scene, x: number, y: number) {
+    // Create the player sprite
+    this.sprite = scene.physics.add
+      .sprite(x, y, "atlas", "misa-back")
+      .setSize(30, 40)
+      .setOffset(0, 24);
 
     // Get cursor keys
     const keyboard = scene.input.keyboard;
