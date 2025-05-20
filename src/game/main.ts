@@ -10,14 +10,20 @@ import { Preloader } from "./scenes/Preloader";
 //  https://docs.phaser.io/api-documentation/typedef/types-core#gameconfig
 const config: Phaser.Types.Core.GameConfig = {
   type: AUTO,
-  width: 800,
-  height: 600,
   parent: "game-container",
   pixelArt: true,
   physics: {
     default: "arcade",
     arcade: {
       gravity: { y: 0 },
+    },
+  },
+  scale: {
+    mode: Phaser.Scale.RESIZE,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+    max: {
+      width: 800,
+      height: 800,
     },
   },
   backgroundColor: "#028af8",
