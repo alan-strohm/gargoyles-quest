@@ -2,7 +2,7 @@ import { Scene } from "phaser";
 import { Player } from "../player/Player";
 
 export class Game extends Scene {
-  private player: Player;
+  private player: Player | null = null;
   private worldLayer: Phaser.Tilemaps.TilemapLayer | null = null;
 
   constructor() {
@@ -59,7 +59,7 @@ export class Game extends Scene {
       if (typeof doorObj.x === 'number' && typeof doorObj.y === 'number') {
         const doorZone = this.add.zone(doorObj.x, doorObj.y, 32, 16);
         this.physics.add.existing(doorZone, true);
-        
+
         this.physics.add.overlap(
           this.player.getSprite(),
           doorZone,
@@ -106,7 +106,10 @@ export class Game extends Scene {
     }
   }
 
-  update(_time: number, _delta: number) {
-    this.player.update();
+  shutdown() {
+    if (this.player) {
+      this.player.shutdown();
+      this.player = null;
+    }
   }
 }

@@ -68,7 +68,7 @@ export class RandomHouse extends Scene {
     // width² = area * φ
     // width = √(area * φ)
     const width = Math.sqrt(targetArea * phi);
-    
+
     // Round to nearest integer
     const floorCols = Math.round(width);
     const floorRows = Math.round(targetArea / floorCols);
@@ -174,9 +174,10 @@ export class RandomHouse extends Scene {
     this.physics.add.collider(this.player.getSprite(), this.wallLayer);
   }
 
-  update(_time: number, _delta: number) {
+  shutdown() {
     if (this.player) {
-      this.player.update();
+      this.player.shutdown();
+      this.player = null;
     }
   }
 }

@@ -1,14 +1,65 @@
-import { Scene } from "phaser";
+import { Scene, Events } from "phaser";
 
-export class Player {
+export enum Direction {
+  UP = 1,
+  RIGHT = 2,
+  DOWN = 3,
+  LEFT = 4
+}
+
+// Define the types of movement events you want to emit.
+export enum PlayerEvents {
+    MOVE = 'move',
+    STOP = 'stop',
+    ACTIVATE = 'activate'
+}
+
+// Define the payload for the 'move' event.
+export interface MoveEventData {
+    direction: Direction;
+    speed: number;
+}
+
+const DRAG_THRESHOLD: number = 10; // Minimum distance to start movement
+const TAP_THRESHOLD: number = 200; // milliseconds to distinguish between tap and drag
+const ACTIVATION_DISTANCE: number = 4; // Distance in front of player to activate
+
+/**
+ * Player class that handles character movement, animation, and interaction in the game.
+ *
+ * ### Movement
+ *
+ * The class manages sprite animations for all movement directions and emits
+ * events when the player starts and stops moving.
+ *
+ * ### Movement controls
+ *
+ * The player can be moved via keyboard (arrow keys) or drag motions.  Drag
+ * works by clicking / tapping anywhere in the scene and dragging in the
+ * direction you want the player to move.
+ *
+ * TODO: support asdw and dpad controls.
+ * TODO: add a visual indicator for drag motions.
+ *
+ * ### Activation input
+ *
+ * The player can "activate" the object in front of them.  They do this by
+ * clicking / tapping or pressing the space bar.  This results in an
+ * "activation" event with the a point directly in front of the player.
+ * Clients of this class must listen to those events and identify which object,
+ * if any is at that point.
+ *
+ */
+export class Player extends Events.EventEmitter {
   private sprite: Phaser.Physics.Arcade.Sprite;
-  private cursors: Phaser.Types.Input.Keyboard.CursorKeys;
   private speed: number = 175;
-  private pointer: Phaser.Input.Pointer;
   private isDragging: boolean = false;
   private dragStartX: number = 0;
   private dragStartY: number = 0;
-  private dragThreshold: number = 10; // Minimum distance to start movement
+  private facingDirection: Direction = Direction.UP;
+  private pointerDownTime: number = 0;
+  private activeKeys: Set<string> = new Set();
+  private cleanupCallbacks: Array<() => void> = [];
 
   static createAnimations(anims: Phaser.Animations.AnimationManager) {
     anims.create({
@@ -57,31 +108,129 @@ export class Player {
     });
   }
 
+
   constructor(scene: Scene, x: number, y: number) {
-    // Create the player sprite
+    super();
+
     this.sprite = scene.physics.add
       .sprite(x, y, "atlas", "misa-back")
-      .setSize(30, 40)
-      .setOffset(0, 24);
+      .setSize(26, 40)
+      .setOffset(4, 24);
+    if (!this.sprite.body) {
+      throw new Error("Sprite must have a physics body");
+    }
 
-    // Get cursor keys
-    const keyboard = scene.input.keyboard;
+    const input = scene.input;
+    input.on('pointerdown', this.handlePointerDown, this);
+    input.on('pointermove', this.handlePointerMove, this);
+    input.on('pointerup', this.handlePointerUp, this);
+
+    // Register cleanup for pointer handlers
+    this.registerCleanupCallback(() => {
+      input.off('pointerdown', this.handlePointerDown, this);
+      input.off('pointermove', this.handlePointerMove, this);
+      input.off('pointerup', this.handlePointerUp, this);
+    });
+
+    // Register event listeners
+    this.on(PlayerEvents.MOVE, this.handleMove);
+    this.on(PlayerEvents.STOP, this.handleStop);
+
+    const keyboard = input.keyboard;
     if (!keyboard) {
       throw new Error("Keyboard input not available");
     }
-    this.cursors = keyboard.createCursorKeys();
+    this.setupKeyboardInput(keyboard);
+  }
 
-    // Set up pointer input
-    this.pointer = scene.input.activePointer;
-    scene.input.on('pointerdown', this.handlePointerDown, this);
-    scene.input.on('pointermove', this.handlePointerMove, this);
-    scene.input.on('pointerup', this.handlePointerUp, this);
+  private setupKeyboardInput(keyboard: Phaser.Input.Keyboard.KeyboardPlugin) {
+    keyboard.on('keydown', (event: KeyboardEvent) => {
+      // Add the key to active keys
+      this.activeKeys.add(event.code);
+
+      if (event.code === 'Space') {
+        this.handleActivation();
+        return;
+      }
+
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.code)) {
+        const lastDirection = this.getLastPressedDirection();
+        if (lastDirection !== null) {
+          this.emit(PlayerEvents.MOVE, { direction: lastDirection, speed: this.speed });
+        }
+      }
+    });
+
+    keyboard.on('keyup', (event: KeyboardEvent) => {
+      // Remove the key from active keys
+      this.activeKeys.delete(event.code);
+
+      // Only handle movement keys
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.code)) {
+        // If there are still direction keys pressed, move in that direction
+        const remainingDirection = this.getLastPressedDirection();
+        if (remainingDirection) {
+          this.emit(PlayerEvents.MOVE, { direction: remainingDirection, speed: this.speed });
+        } else {
+          this.emit(PlayerEvents.STOP);
+        }
+      }
+    });
+
+    // Register cleanup for keyboard handlers
+    this.registerCleanupCallback(() => {
+      keyboard.off('keydown');
+      keyboard.off('keyup');
+    });
+  }
+
+  private getLastPressedDirection(): Direction | null {
+    // Check keys in reverse order of priority (right, left, down, up)
+    if (this.activeKeys.has('ArrowRight')) return Direction.RIGHT;
+    if (this.activeKeys.has('ArrowLeft')) return Direction.LEFT;
+    if (this.activeKeys.has('ArrowDown')) return Direction.DOWN;
+    if (this.activeKeys.has('ArrowUp')) return Direction.UP;
+    return null;
+  }
+
+  private getActivationPoint(): Phaser.Math.Vector2 {
+    const body = this.sprite.body as Phaser.Physics.Arcade.Body;
+    const centerX = body.center.x;
+    const centerY = body.center.y;
+    const halfWidth = body.width / 2;
+    const halfHeight = body.height / 2;
+
+    switch (this.facingDirection) {
+      case Direction.UP:
+        return new Phaser.Math.Vector2(centerX, centerY - halfHeight - ACTIVATION_DISTANCE);
+      case Direction.RIGHT:
+        return new Phaser.Math.Vector2(centerX + halfWidth + ACTIVATION_DISTANCE, centerY);
+      case Direction.DOWN:
+        return new Phaser.Math.Vector2(centerX, centerY + halfHeight + ACTIVATION_DISTANCE);
+      case Direction.LEFT:
+        return new Phaser.Math.Vector2(centerX - halfWidth - ACTIVATION_DISTANCE, centerY);
+    }
+  }
+
+  private handleActivation() {
+    if (this.isMoving()) {
+      return;
+    }
+
+    const activationPoint = this.getActivationPoint();
+    this.emit('activate', activationPoint);
+  }
+
+  private isMoving(): boolean {
+    const velocity = this.sprite.body!.velocity;
+    return Math.abs(velocity.x) > 0 || Math.abs(velocity.y) > 0;
   }
 
   private handlePointerDown(pointer: Phaser.Input.Pointer) {
     this.isDragging = true;
     this.dragStartX = pointer.x;
     this.dragStartY = pointer.y;
+    this.pointerDownTime = Date.now();
   }
 
   private handlePointerMove(pointer: Phaser.Input.Pointer) {
@@ -91,87 +240,105 @@ export class Player {
     const dy = pointer.y - this.dragStartY;
     const distance = Math.sqrt(dx * dx + dy * dy);
 
-    if (distance > this.dragThreshold) {
+    if (distance > DRAG_THRESHOLD) {
       // Calculate normalized direction vector
       const dirX = dx / distance;
       const dirY = dy / distance;
 
-      // Set velocity based on drag direction
-      if (this.sprite.body) {
-        this.sprite.body.velocity.x = dirX * this.speed;
-        this.sprite.body.velocity.y = dirY * this.speed;
-
-        // Update animation based on dominant direction
-        if (Math.abs(dirX) > Math.abs(dirY)) {
-          this.sprite.anims.play(dirX > 0 ? "misa-right-walk" : "misa-left-walk", true);
-        } else {
-          this.sprite.anims.play(dirY > 0 ? "misa-front-walk" : "misa-back-walk", true);
-        }
+      // Determine primary direction based on the larger component
+      let direction: Direction;
+      if (Math.abs(dirX) > Math.abs(dirY)) {
+        direction = dirX > 0 ? Direction.RIGHT : Direction.LEFT;
+      } else {
+        direction = dirY > 0 ? Direction.DOWN : Direction.UP;
       }
+
+      // Emit move event with the determined direction
+      this.emit(PlayerEvents.MOVE, { direction, speed: this.speed });
     }
   }
 
   private handlePointerUp() {
-    this.isDragging = false;
-    if (this.sprite.body) {
-      this.sprite.body.velocity.set(0);
-      this.sprite.anims.stop();
+    const pointerUpTime = Date.now();
+    const pressDuration = pointerUpTime - this.pointerDownTime;
+
+    // If it was a quick tap (not a drag), handle activation
+    if (pressDuration < TAP_THRESHOLD && !this.isMoving()) {
+      this.handleActivation();
     }
+
+    this.isDragging = false;
+    this.emit(PlayerEvents.STOP);
   }
 
-  update() {
-    if (!this.sprite.body) {
-      return;
-    }
-
-    const body = this.sprite.body as Phaser.Physics.Arcade.Body;
-    const prevVelocity = body.velocity.clone();
-
-    // Only handle keyboard input if not dragging
-    if (!this.isDragging) {
-      // Stop any previous movement from the last frame
+  private handleMove(data: MoveEventData) {
+      const body = this.sprite.body as Phaser.Physics.Arcade.Body;
       body.setVelocity(0);
 
-      // Horizontal movement
-      if (this.cursors.left.isDown) {
-        body.setVelocityX(-this.speed);
-      } else if (this.cursors.right.isDown) {
-        body.setVelocityX(this.speed);
+      switch (data.direction) {
+          case Direction.UP:
+              body.setVelocityY(-data.speed);
+              this.sprite.anims.play("misa-back-walk", true);
+              this.facingDirection = Direction.UP;
+              break;
+          case Direction.DOWN:
+              body.setVelocityY(data.speed);
+              this.sprite.anims.play("misa-front-walk", true);
+              this.facingDirection = Direction.DOWN;
+              break;
+          case Direction.LEFT:
+              body.setVelocityX(-data.speed);
+              this.sprite.anims.play("misa-left-walk", true);
+              this.facingDirection = Direction.LEFT;
+              break;
+          case Direction.RIGHT:
+              body.setVelocityX(data.speed);
+              this.sprite.anims.play("misa-right-walk", true);
+              this.facingDirection = Direction.RIGHT;
+              break;
       }
+  }
 
-      // Vertical movement
-      if (this.cursors.up.isDown) {
-        body.setVelocityY(-this.speed);
-      } else if (this.cursors.down.isDown) {
-        body.setVelocityY(this.speed);
-      }
+  private handleStop() {
+      const body = this.sprite.body as Phaser.Physics.Arcade.Body;
+      body.setVelocity(0);
+      this.sprite.anims.stop();
 
-      // Normalize and scale the velocity so that player can't move faster along a diagonal
-      body.velocity.normalize().scale(this.speed);
+      if (this.facingDirection === Direction.LEFT) this.sprite.setTexture("atlas", "misa-left");
+      else if (this.facingDirection === Direction.RIGHT) this.sprite.setTexture("atlas", "misa-right");
+      else if (this.facingDirection === Direction.UP) this.sprite.setTexture("atlas", "misa-back");
+      else if (this.facingDirection === Direction.DOWN) this.sprite.setTexture("atlas", "misa-front");
+  }
 
-      // Update the animation last and give left/right animations precedence over up/down animations
-      if (this.cursors.left.isDown) {
-        this.sprite.anims.play("misa-left-walk", true);
-      } else if (this.cursors.right.isDown) {
-        this.sprite.anims.play("misa-right-walk", true);
-      } else if (this.cursors.up.isDown) {
-        this.sprite.anims.play("misa-back-walk", true);
-      } else if (this.cursors.down.isDown) {
-        this.sprite.anims.play("misa-front-walk", true);
-      } else {
-        this.sprite.anims.stop();
+  private registerCleanupCallback(callback: () => void) {
+    this.cleanupCallbacks.push(callback);
+  }
 
-        // If we were moving, pick and idle frame to use
-        if (prevVelocity.x < 0) this.sprite.setTexture("atlas", "misa-left");
-        else if (prevVelocity.x > 0) this.sprite.setTexture("atlas", "misa-right");
-        else if (prevVelocity.y < 0) this.sprite.setTexture("atlas", "misa-back");
-        else if (prevVelocity.y > 0) this.sprite.setTexture("atlas", "misa-front");
-      }
+  shutdown() {
+    // Execute all registered cleanup callbacks
+    for (const callback of this.cleanupCallbacks) {
+      callback();
     }
+    this.cleanupCallbacks = [];
+
+    // Stop all movement and animations
+    if (this.sprite?.body) {
+      this.sprite.body.velocity.set(0, 0);
+      this.sprite.anims.stop();
+    }
+
+    // Destroy the sprite
+    this.sprite?.destroy();
+
+    // Reset state
+    this.isDragging = false;
+    this.dragStartX = 0;
+    this.dragStartY = 0;
+    this.activeKeys.clear();
   }
 
   // Getters for collision and camera setup
   getSprite(): Phaser.Physics.Arcade.Sprite {
     return this.sprite;
   }
-} 
+}
