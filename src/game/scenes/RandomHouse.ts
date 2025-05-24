@@ -4,16 +4,11 @@ import { Player, Direction, PlayerEvents } from "../player/Player";
 
 // Base tile ID for wall tiles - adjust this to match your tileset
 const DEFAULT_WALL_BASE_ID = 0;
-const DEFAULT_FLOOR_ID = 100;
 
 export class RandomHouse extends Scene {
-  private wallLayer: Phaser.Tilemaps.TilemapLayer | null = null;
-  private groundLayer: Phaser.Tilemaps.TilemapLayer | null = null;
+  private belowLayer: Phaser.Tilemaps.TilemapLayer | null = null;
+  private aboveLayer: Phaser.Tilemaps.TilemapLayer | null = null;
   private player: Player | null = null;
-  private roomWidth: number = 0;
-  private roomHeight: number = 0;
-  private roomX: number = 0;
-  private roomY: number = 0;
 
   constructor() {
     super("RandomHouse");
@@ -30,7 +25,7 @@ export class RandomHouse extends Scene {
       overTopWall: wallBaseId + 1,
       overTopRightCorner: wallBaseId + 2,
       overLeftWall: wallBaseId + 46,
-      floor: -1,
+      floor: wallBaseId + 47,
       overRightWall: wallBaseId + 48,
       overBottomLeftCorner: wallBaseId + 92,
       overBottomWall: wallBaseId + 93,
@@ -87,12 +82,12 @@ export class RandomHouse extends Scene {
   // onReturn will be called when the player exits the house.
   async create(data?: { onReturn?: (scene: Scene) => void }) {
     // Set black background
-    this.cameras.main.setBackgroundColor('#000000');
+    this.cameras.main.setBackgroundColor('#dcdcdc');
 
     // Generate random room parameters
-    // sideHeight: 2 (60%), 1 (30%), 3 (10%)
+    // sideHeight: 3 (60%), 2 (30%), 4 (10%)
     const sideHeightRoll = Math.random();
-    const sideHeight = sideHeightRoll < 0.6 ? 2 : (sideHeightRoll < 0.9 ? 1 : 3);
+    const sideHeight = sideHeightRoll < 0.6 ? 3 : (sideHeightRoll < 0.9 ? 2 : 4);
 
     // Calculate floor dimensions
     const { floorRows, floorCols } = this.calculateFloorDimensions(150, 400);
@@ -101,8 +96,8 @@ export class RandomHouse extends Scene {
     const width = floorCols + 2;
     const overHeight = floorRows + 3 + sideHeight;
 
-    // Generate valid door position (>= 2 and < width-2)
-    const doorPosition = Math.floor(Math.random() * (width - 4)) + 2;
+    // Generate valid door position (>= 2 and < width-3)
+    const doorPosition = Math.floor(Math.random() * (width - 5)) + 2;
 
     // Create room description
     const roomDescription: RoomDescription = {
@@ -121,62 +116,74 @@ export class RandomHouse extends Scene {
     });
 
     const walls = map.addTilesetImage("walls", undefined, 16, 16, 0, 0);
-    const floors = map.addTilesetImage("floors", undefined, 16, 16, 0, 0);
-    if (!walls || !floors) {
+    if (!walls) {
       console.error("Failed to load tilesets");
       return;
     }
 
-    this.groundLayer = map.createBlankLayer("Ground", floors);
-    this.wallLayer = map.createBlankLayer("Walls", walls);
-    if (!this.wallLayer || !this.groundLayer) {
+    this.belowLayer = map.createBlankLayer("Below", walls);
+    this.aboveLayer = map.createBlankLayer("Above", walls);
+    if (!this.belowLayer || !this.aboveLayer) {
       console.error("Failed to create layers");
       return;
     }
+    this.aboveLayer.setDepth(10);
 
-    // Generate room tiles
-    const tileTypes = this.mapTileTypesToIds(DEFAULT_WALL_BASE_ID);
-    const roomTiler = new RoomTiling(tileTypes);
-    const generatedTiles = roomTiler.generateTiles(roomDescription);
+    this.tileRoom(roomDescription, DEFAULT_WALL_BASE_ID);
 
-    // Place tiles in the layer
-    for (let y = 0; y < overHeight + sideHeight; y++) {
-      for (let x = 0; x < width; x++) {
-        const tileId = generatedTiles[y * width + x];
-        if (tileId === -1) {
-          this.groundLayer.putTileAt(DEFAULT_FLOOR_ID, x, y);
-        } else {
-          this.wallLayer.putTileAt(tileId, x, y);
-        }
-      }
+    // Set up keyboard handler for cycling through wall styles
+    const keyboard = this.input.keyboard;
+    if (keyboard) {
+      let times = 0;
+      keyboard.on("keydown-X", () => {
+        times++;
+        const offset = (times % 4) * 7 + Math.floor(times / 4) * 322;
+        this.tileRoom(roomDescription, offset);
+      });
+      keyboard.once("keydown-D", () => {
+        // Turn on physics debugging to show player's hitbox
+        this.physics.world.createDebugGraphic();
+
+        // Create worldLayer collision graphic above the player, but below the help text
+        const graphics = this.add.graphics().setAlpha(0.75).setDepth(20);
+        this.worldLayer?.renderDebug(graphics, {
+          tileColor: null, // Color of non-colliding tiles
+          collidingTileColor: new Phaser.Display.Color(243, 134, 48, 255), // Color of colliding tiles
+          faceColor: new Phaser.Display.Color(40, 39, 37, 255), // Color of colliding face edges
+        });
+      });
     }
 
     // Center the room in the game canvas
     const gameWidth = this.scale.width;
     const gameHeight = this.scale.height;
-    this.roomWidth = width * 16;  // tileWidth is 16
-    this.roomHeight = (overHeight + sideHeight) * 16;  // tileHeight is 16
+    const roomWidth = width * 16;  // tileWidth is 16
+    const roomHeight = (overHeight + sideHeight) * 16;  // tileHeight is 16
 
     // Calculate the position to center the room
-    this.roomX = (gameWidth - this.roomWidth) / 2;
-    this.roomY = (gameHeight - this.roomHeight) / 2;
+    const roomX = (gameWidth - roomWidth) / 2;
+    const roomY = (gameHeight - roomHeight) / 2;
+    this.physics.world.setBounds(
+      roomX+16,
+      roomY+16*(sideHeight-1),
+      roomWidth-32,
+      roomHeight-16*(sideHeight-1));
 
     // Set the layer's position to center it
-    this.wallLayer.setPosition(this.roomX, this.roomY);
-    this.groundLayer.setPosition(this.roomX, this.roomY);
+    this.belowLayer.setPosition(roomX, roomY);
+    this.aboveLayer.setPosition(roomX, roomY);
 
     // Create player at the doorway
-    const playerX = this.roomX + (doorPosition * 16) + 16; // Center in the doorway
-    const playerY = this.roomY + (overHeight + sideHeight - 2) * 16; // Bottom of the room
+    const playerX = roomX + (doorPosition * 16) + 16; // Center in the doorway
+    const playerY = roomY + roomHeight - 32; // Bottom of the room
     this.player = new Player(this, new Phaser.Math.Vector2(playerX, playerY));
 
-    // Set up collision detection
-    this.wallLayer.setCollisionByExclusion([-1]); // Collide with all tiles except empty ones
-    this.physics.add.collider(this.player.getSprite(), this.wallLayer);
+    this.player.getSprite().setCollideWorldBounds(true);
+    this.physics.add.collider(this.player.getSprite(), this.aboveLayer);
 
     // Create a zone for the door
-    const doorX = this.roomX + (doorPosition * 16); // Center of the door tile
-    const doorY = this.roomY + (overHeight + sideHeight - 1) * 16; // Center of the door tile
+    const doorX = roomX + (doorPosition * 16) + 16; // Center of the door tile
+    const doorY = roomY + roomHeight-8;
     const doorZone = this.add.zone(doorX, doorY, 32, 16);
     this.physics.add.existing(doorZone, true);
 
@@ -187,7 +194,7 @@ export class RandomHouse extends Scene {
     this.player.emit(PlayerEvents.MOVE, { direction: Direction.UP, speed: this.player.getSpeed() });
 
     // Wait for movement to complete
-    const tileTime = (32 / this.player.getSpeed()) * 1000;
+    const tileTime = (16 / this.player.getSpeed()) * 1000;
     await new Promise(resolve => this.time.delayedCall(tileTime, resolve));
 
     this.player.emit(PlayerEvents.STOP);
@@ -206,6 +213,27 @@ export class RandomHouse extends Scene {
       undefined,
       this
     );
+  }
+
+  private tileRoom(roomDescription: RoomDescription, tileOffset: number) {
+    const tileTypes = this.mapTileTypesToIds(tileOffset);
+    // Set up collision detection
+    const roomTiler = new RoomTiling(tileTypes);
+    const generatedTiles = roomTiler.generateTiles(roomDescription);
+    const { overHeight, sideHeight, width } = roomDescription;
+    for (let y = 0; y < overHeight + sideHeight; y++) {
+      for (let x = 0; x < width; x++) {
+        const tileId = generatedTiles[y * width + x];
+        if (y < (overHeight-1) || tileId === tileTypes.floor) {
+          this.belowLayer?.putTileAt(tileId, x, y);
+        } else {
+          this.aboveLayer?.putTileAt(tileId, x, y).setCollision(
+            tileId === tileTypes.sideBottomWall ||
+            tileId === tileTypes.sideBottomLeftCorner ||
+            tileId === tileTypes.sideBottomRightCorner);
+        }
+      }
+    }
   }
 
   shutdown() {
