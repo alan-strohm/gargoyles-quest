@@ -1,6 +1,13 @@
 import { Scene } from "phaser";
 import { Player } from "../player/Player";
 
+const doors = [
+  { x: 8, y: 34 }, { x: 19, y: 34 }, { x: 21, y: 25 }, { x: 14, y: 25 },
+  { x: 6, y: 25 }, { x: 1, y: 25 }, { x: 27, y: 16 }, { x: 19, y: 16 },
+  { x: 10, y: 16 }, { x: 6, y: 8 }, { x: 13, y: 8 }, { x: 22, y: 8 },
+  { x: 13, y: 3 }, { x: 6, y: 3 }
+];
+
 export class Game extends Scene {
   private player: Player | null = null;
   private worldLayer: Phaser.Tilemaps.TilemapLayer | null = null;
@@ -49,29 +56,25 @@ export class Game extends Scene {
     // Create the player
     this.player = new Player(this, spawnPoint.x, spawnPoint.y);
 
+    // Listen for player activation events
+    this.player.on('activate', (point: Phaser.Math.Vector2) => {
+      const tileX = map.worldToTileX(point.x);
+      const tileY = map.worldToTileY(point.y);
+
+      // Check if activation point matches any door
+      const isDoor = doors.some(door => door.x === tileX && door.y === tileY);
+
+      if (isDoor) {
+        // Fade out and transition to RandomHouse scene
+        this.cameras.main.fade(500, 0, 0, 0);
+        this.cameras.main.once('camerafadeoutcomplete', () => {
+          this.scene.start('RandomHouse');
+        });
+      }
+    });
+
     // Watch the player and worldLayer for collisions, for the duration of the scene:
     this.physics.add.collider(this.player.getSprite(), this.worldLayer);
-
-    // Add collision with door objects
-    const doorObjects = map.getObjectLayer("Objects")?.objects.filter(obj => obj.type === "Door") || [];
-
-    for (const doorObj of doorObjects) {
-      if (typeof doorObj.x === 'number' && typeof doorObj.y === 'number') {
-        const doorZone = this.add.zone(doorObj.x, doorObj.y, 32, 16);
-        this.physics.add.existing(doorZone, true);
-
-        this.physics.add.overlap(
-          this.player.getSprite(),
-          doorZone,
-          () => {
-            // Start the RandomHouse scene
-            this.scene.start('RandomHouse');
-          },
-          undefined,
-          this
-        );
-      }
-    }
 
     const camera = this.cameras.main;
     camera.startFollow(this.player.getSprite());
