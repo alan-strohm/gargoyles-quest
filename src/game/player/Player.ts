@@ -109,16 +109,19 @@ export class Player extends Events.EventEmitter {
   }
 
 
-  constructor(scene: Scene, x: number, y: number) {
+  constructor(scene: Scene, position: Phaser.Math.Vector2, facingDirection: Direction = Direction.UP) {
     super();
 
     this.sprite = scene.physics.add
-      .sprite(x, y, "atlas", "misa-back")
+      .sprite(position.x, position.y, "atlas", "misa-back")
       .setSize(26, 40)
       .setOffset(4, 24);
     if (!this.sprite.body) {
       throw new Error("Sprite must have a physics body");
     }
+
+    this.facingDirection = facingDirection;
+    this.setTextureForDirection(facingDirection);
 
     const input = scene.input;
     input.on('pointerdown', this.handlePointerDown, this);
@@ -303,11 +306,24 @@ export class Player extends Events.EventEmitter {
       const body = this.sprite.body as Phaser.Physics.Arcade.Body;
       body.setVelocity(0);
       this.sprite.anims.stop();
+      this.setTextureForDirection(this.facingDirection);
+  }
 
-      if (this.facingDirection === Direction.LEFT) this.sprite.setTexture("atlas", "misa-left");
-      else if (this.facingDirection === Direction.RIGHT) this.sprite.setTexture("atlas", "misa-right");
-      else if (this.facingDirection === Direction.UP) this.sprite.setTexture("atlas", "misa-back");
-      else if (this.facingDirection === Direction.DOWN) this.sprite.setTexture("atlas", "misa-front");
+  private setTextureForDirection(direction: Direction) {
+    switch (direction) {
+      case Direction.LEFT:
+        this.sprite.setTexture("atlas", "misa-left");
+        break;
+      case Direction.RIGHT:
+        this.sprite.setTexture("atlas", "misa-right");
+        break;
+      case Direction.UP:
+        this.sprite.setTexture("atlas", "misa-back");
+        break;
+      case Direction.DOWN:
+        this.sprite.setTexture("atlas", "misa-front");
+        break;
+    }
   }
 
   private registerCleanupCallback(callback: () => void) {
@@ -340,5 +356,9 @@ export class Player extends Events.EventEmitter {
   // Getters for collision and camera setup
   getSprite(): Phaser.Physics.Arcade.Sprite {
     return this.sprite;
+  }
+
+  getSpeed(): number {
+    return this.speed;
   }
 }

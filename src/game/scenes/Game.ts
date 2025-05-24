@@ -1,5 +1,6 @@
 import { Scene } from "phaser";
 import { Player } from "../player/Player";
+import { Direction } from "../player/Player";
 
 const doors = [
   { x: 8, y: 34 }, { x: 19, y: 34 }, { x: 21, y: 25 }, { x: 14, y: 25 },
@@ -16,7 +17,49 @@ export class Game extends Scene {
     super("Game");
   }
 
-  create() {
+  private getSpawnPoint(map: Phaser.Tilemaps.Tilemap, spawnPoint?: Phaser.Math.Vector2): Phaser.Math.Vector2 {
+    // If a custom spawn point was provided, use it
+    if (spawnPoint) {
+      return spawnPoint;
+    }
+
+    // Otherwise use the default spawn point from the map
+    const defaultSpawnPoint = map.findObject(
+      "Objects",
+      (obj) => obj.name === "Spawn Point",
+    );
+
+    if (!defaultSpawnPoint || typeof defaultSpawnPoint.x !== 'number' || typeof defaultSpawnPoint.y !== 'number') {
+      throw new Error("Failed to find spawn point");
+    }
+
+    return new Phaser.Math.Vector2(defaultSpawnPoint.x, defaultSpawnPoint.y);
+  }
+
+  private async handleDoorActivation(door: { x: number; y: number }) {
+    // Fade out and transition to RandomHouse scene
+    this.cameras.main.fade(500, 0, 0, 0);
+    await new Promise(resolve => this.cameras.main.once('camerafadeoutcomplete', resolve));
+
+    this.scene.start('RandomHouse', {
+      onReturn: async (houseScene: Scene) => {
+        // Calculate spawn point in front of the door
+        const spawnX = door.x * 32 + 16; // Center of door tile
+        const spawnY = (door.y + 1) * 32 + 16; // One tile below door
+
+        // Fade in and return to game
+        houseScene.cameras.main.fade(500, 0, 0, 0);
+        await new Promise(resolve => houseScene.cameras.main.once('camerafadeoutcomplete', resolve));
+
+        houseScene.scene.start('Game', {
+          spawnPoint: new Phaser.Math.Vector2(spawnX, spawnY),
+          initialDirection: Direction.DOWN
+        });
+      }
+    });
+  }
+
+  create(data?: { spawnPoint?: Phaser.Math.Vector2, initialDirection?: Direction }) {
     const map = this.make.tilemap({ key: "map" });
 
     // Parameters are the name you gave the tileset in Tiled and then the key of the tileset image in
@@ -42,34 +85,21 @@ export class Game extends Scene {
     // Higher depths will sit on top of lower depth objects.
     aboveLayer.setDepth(10);
 
-    // Object layers in Tiled let you embed extra info into a map - like a spawn point or custom
-    // collision shapes. In the tmx file, there's an object layer with a point named "Spawn Point"
-    const spawnPoint = map.findObject(
-      "Objects",
-      (obj) => obj.name === "Spawn Point",
-    );
-
-    if (!spawnPoint || typeof spawnPoint.x !== 'number' || typeof spawnPoint.y !== 'number') {
-      throw new Error("Failed to find spawn point");
-    }
-
-    // Create the player
-    this.player = new Player(this, spawnPoint.x, spawnPoint.y);
+    // Get the spawn point and create the player
+    const spawnPoint = this.getSpawnPoint(map, data?.spawnPoint);
+    this.player = new Player(this, spawnPoint, data?.initialDirection);
 
     // Listen for player activation events
     this.player.on('activate', (point: Phaser.Math.Vector2) => {
       const tileX = map.worldToTileX(point.x);
       const tileY = map.worldToTileY(point.y);
+      console.log(point, tileX, tileY);
 
       // Check if activation point matches any door
-      const isDoor = doors.some(door => door.x === tileX && door.y === tileY);
+      const door = doors.find(door => door.x === tileX && door.y === tileY);
 
-      if (isDoor) {
-        // Fade out and transition to RandomHouse scene
-        this.cameras.main.fade(500, 0, 0, 0);
-        this.cameras.main.once('camerafadeoutcomplete', () => {
-          this.scene.start('RandomHouse');
-        });
+      if (door) {
+        this.handleDoorActivation(door);
       }
     });
 
@@ -82,7 +112,7 @@ export class Game extends Scene {
 
     // Help text that has a "fixed" position on the screen
     this.add
-      .text(16, 16, 'Arrow keys to move\nPress "D" to show hitboxes', {
+      .text(16, 16, 'Arrow keys to move\nSpace to interact', {
         font: "18px monospace",
         color: "#000000",
         padding: { x: 20, y: 10 },

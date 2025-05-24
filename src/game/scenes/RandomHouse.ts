@@ -1,6 +1,6 @@
 import { Scene } from "phaser";
 import { RoomTiling, RoomDescription, TileTypes } from "../room/RoomTiling";
-import { Player } from "../player/Player";
+import { Player, Direction, PlayerEvents } from "../player/Player";
 
 // Base tile ID for wall tiles - adjust this to match your tileset
 const DEFAULT_WALL_BASE_ID = 0;
@@ -84,7 +84,8 @@ export class RandomHouse extends Scene {
     return { floorRows, floorCols };
   }
 
-  create() {
+  // onReturn will be called when the player exits the house.
+  async create(data?: { onReturn?: (scene: Scene) => void }) {
     // Set black background
     this.cameras.main.setBackgroundColor('#000000');
 
@@ -167,11 +168,44 @@ export class RandomHouse extends Scene {
     // Create player at the doorway
     const playerX = this.roomX + (doorPosition * 16) + 16; // Center in the doorway
     const playerY = this.roomY + (overHeight + sideHeight - 2) * 16; // Bottom of the room
-    this.player = new Player(this, playerX, playerY);
+    this.player = new Player(this, new Phaser.Math.Vector2(playerX, playerY));
 
     // Set up collision detection
     this.wallLayer.setCollisionByExclusion([-1]); // Collide with all tiles except empty ones
     this.physics.add.collider(this.player.getSprite(), this.wallLayer);
+
+    // Create a zone for the door
+    const doorX = this.roomX + (doorPosition * 16); // Center of the door tile
+    const doorY = this.roomY + (overHeight + sideHeight - 1) * 16; // Center of the door tile
+    const doorZone = this.add.zone(doorX, doorY, 32, 16);
+    this.physics.add.existing(doorZone, true);
+
+    // Wait a short delay before moving
+    await new Promise(resolve => this.time.delayedCall(100, resolve));
+
+    // Move player up one tile
+    this.player.emit(PlayerEvents.MOVE, { direction: Direction.UP, speed: this.player.getSpeed() });
+
+    // Wait for movement to complete
+    const tileTime = (32 / this.player.getSpeed()) * 1000;
+    await new Promise(resolve => this.time.delayedCall(tileTime, resolve));
+
+    this.player.emit(PlayerEvents.STOP);
+
+    let onReturn = data?.onReturn;
+    // Set up door overlap check
+    this.physics.add.overlap(
+      this.player.getSprite(),
+      doorZone,
+      () => {
+        if (onReturn) {
+          onReturn(this);
+          onReturn = null;
+        }
+      },
+      undefined,
+      this
+    );
   }
 
   shutdown() {
