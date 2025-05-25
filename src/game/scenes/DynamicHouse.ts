@@ -142,7 +142,7 @@ export class DynamicHouse extends Scene {
 
     // Create player at the doorway
     const playerX = roomX + doorPosition * TILE_SIZE + TILE_SIZE; // Center in the doorway
-    const playerY = roomY + roomHeight - 2 * TILE_SIZE; // Bottom of the room
+    const playerY = roomY + roomHeight - TILE_SIZE; // Bottom of the room
     this.player = new Player(this, new Phaser.Math.Vector2(playerX, playerY));
 
     this.player.getSprite().setCollideWorldBounds(true);
