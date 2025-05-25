@@ -35,7 +35,7 @@ export class Preloader extends Scene {
     this.load.tilemapTiledJSON("map", "./tilemaps/tuxemon-town.json");
 
     this.load.atlas("atlas-16px", "./atlas/atlas-16px.png", "./atlas/atlas-16px.json");
-    this.load.atlas("atlas-32px", "./atlas/atlas-32px.png", "./atlas/atlas-32px.json");
+    // this.load.atlas("atlas-32px", "./atlas/atlas-32px.png", "./atlas/atlas-32px.json");
   }
 
   create() {
