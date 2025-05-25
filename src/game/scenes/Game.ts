@@ -59,7 +59,7 @@ function randomHouse(): HouseDescription {
   // sideHeight: 2 (60%), 1 (30%), 3 (10%)
   const sideHeightRoll = Math.random();
   const sideHeight = sideHeightRoll < 0.6 ? 2 : (sideHeightRoll < 0.9 ? 1 : 3);
-  const tileRoll = Math.floor(Math.random() * 31);
+  const tileRoll = Math.floor(Math.random() * 30);
   console.log("tileRoll", tileRoll);
   return {
     room: {
