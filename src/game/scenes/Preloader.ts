@@ -1,5 +1,6 @@
 import { Scene } from "phaser";
 import { Player } from "../player/Player";
+import { createItemAnimations } from "../items/Items";
 
 export class Preloader extends Scene {
   constructor() {
@@ -38,6 +39,9 @@ export class Preloader extends Scene {
   }
 
   create() {
+    // Create animations for all registered items
+    createItemAnimations(this.anims);
+
     Player.createAnimations(this.anims);
     //  When all the assets have loaded, it's often worth creating global objects here that the rest of the game can use.
     //  For example, you can define global animations here, so we can use them in other scenes.

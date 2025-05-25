@@ -1,10 +1,12 @@
 import { Scene } from "phaser";
 import { RoomTiling, RoomDimensions, TileTypes } from "../room/RoomTiling";
 import { Player, Direction, PlayerEvents } from "../player/Player";
+import { Item, createItem } from "../items/Items";
 
 export interface HouseDescription {
   room: RoomDimensions;
   tileOffset: number;
+  items: { item: string | Item, tileX: number, tileY: number }[];
 }
 
 const TILE_SIZE = 32;
@@ -14,6 +16,7 @@ export class DynamicHouse extends Scene {
   private worldLayer: Phaser.Tilemaps.TilemapLayer | null = null;
   private aboveLayer: Phaser.Tilemaps.TilemapLayer | null = null;
   private player: Player | null = null;
+  private items: { sprite: Phaser.GameObjects.Sprite, item: Item }[] = [];
 
   constructor() {
     super("DynamicHouse");
@@ -53,7 +56,7 @@ export class DynamicHouse extends Scene {
     // Set black background
     this.cameras.main.setBackgroundColor('#dcdcdc');
 
-    const { room, tileOffset } = data.house;
+    const { room, tileOffset, items } = data.house;
     const { width, overHeight, sideHeight, doorPosition } = room;
 
     // Create tilemap with room dimensions
@@ -135,6 +138,32 @@ export class DynamicHouse extends Scene {
     this.physics.add.collider(this.player.getSprite(), this.aboveLayer);
     this.physics.add.collider(this.player.getSprite(), this.worldLayer);
 
+    // Create items at their tile positions
+    items.forEach(({ item, tileX, tileY }) => {
+      const itemInstance = typeof item === 'string' ? createItem(item) : item;
+      const worldX = roomX + (tileX * TILE_SIZE) + TILE_SIZE / 2;
+      const worldY = roomY + (tileY * TILE_SIZE) + TILE_SIZE / 2;
+      const sprite = itemInstance.createSprite(this, worldX, worldY);
+      if (this.player) {
+        this.physics.add.collider(this.player.getSprite(), sprite);
+      }
+      this.items.push({ sprite, item: itemInstance });
+    });
+
+    // Listen for player activation events
+    this.player.on(PlayerEvents.ACTIVATE, (point: Phaser.Math.Vector2) => {
+      // Check if any item is at the activation point
+      this.items.forEach(({ sprite, item }) => {
+        const distance = Phaser.Math.Distance.Between(
+          point.x, point.y,
+          sprite.x, sprite.y
+        );
+        if (distance < TILE_SIZE) {
+          item.activate(this);
+        }
+      });
+    });
+
     // Create a zone for the door
     const doorX = roomX + (doorPosition * TILE_SIZE) + TILE_SIZE; // Center of the door tile
     const doorY = roomY + roomHeight - TILE_SIZE / 2;
@@ -197,5 +226,8 @@ export class DynamicHouse extends Scene {
       this.player.shutdown();
       this.player = null;
     }
+    // Clean up items
+    this.items.forEach(({ sprite }) => sprite.destroy());
+    this.items = [];
   }
 }

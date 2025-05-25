@@ -2,6 +2,7 @@ import { Scene } from "phaser";
 import { Player } from "../player/Player";
 import { Direction } from "../player/Player";
 import { HouseDescription } from "./DynamicHouse";
+import { Heart } from "../items/Items";
 
 const doors = [
   { x: 8, y: 34 }, { x: 19, y: 34 }, { x: 21, y: 25 }, { x: 14, y: 25 },
@@ -15,6 +16,18 @@ const doors = [
     house
   };
 });
+
+// Choose one random house to contain the macguffin
+const macguffinHouseIndex = Math.floor(Math.random() * doors.length);
+const macguffinHouse = doors[macguffinHouseIndex].house;
+const { room } = macguffinHouse;
+
+// Place macguffin at a random position within the floor area
+// Add 1 to x and y to account for walls, and subtract 1 from width and height to keep away from walls
+const macguffinX = Math.floor(Math.random() * (room.width - 4)) + 2;
+const macguffinY = Math.floor(Math.random() * (room.overHeight - 4)) + 2 + room.sideHeight;
+
+macguffinHouse.items = [{ item: new Heart(), tileX: macguffinX, tileY: macguffinY }];
 
 function randomHouse(): HouseDescription {
   const minFloorArea = 75;
@@ -56,7 +69,8 @@ function randomHouse(): HouseDescription {
       // Generate valid door position (>= 2 and < width-3)
       doorPosition: Math.floor(Math.random() * (floorCols - 5)) + 2
     },
-    tileOffset: (tileRoll % 4) * 7 + Math.floor(tileRoll / 4) * 322
+    tileOffset: (tileRoll % 4) * 7 + Math.floor(tileRoll / 4) * 322,
+    items: []
   };
 }
 
@@ -164,7 +178,7 @@ export class Game extends Scene {
 
     // Help text that has a "fixed" position on the screen
     this.add
-      .text(16, 16, 'Arrow keys to move\nSpace to interact', {
+      .text(16, 16, 'Arrow keys to move\nSpace to interact\nFind the heart!', {
         font: "18px monospace",
         color: "#000000",
         padding: { x: 20, y: 10 },
