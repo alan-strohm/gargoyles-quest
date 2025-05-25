@@ -1,13 +1,64 @@
 import { Scene } from "phaser";
 import { Player } from "../player/Player";
 import { Direction } from "../player/Player";
+import { HouseDescription } from "./DynamicHouse";
 
 const doors = [
   { x: 8, y: 34 }, { x: 19, y: 34 }, { x: 21, y: 25 }, { x: 14, y: 25 },
   { x: 6, y: 25 }, { x: 1, y: 25 }, { x: 27, y: 16 }, { x: 19, y: 16 },
   { x: 10, y: 16 }, { x: 6, y: 8 }, { x: 13, y: 8 }, { x: 22, y: 8 },
   { x: 13, y: 3 }, { x: 6, y: 3 }
-];
+].map(door => {
+  const house = randomHouse();
+  return {
+    ...door,
+    house
+  };
+});
+
+function randomHouse(): HouseDescription {
+  const minFloorArea = 75;
+  const maxFloorArea = 200;
+
+  // Choose a target area within the range
+  const targetArea = Math.floor(Math.random() * (maxFloorArea - minFloorArea)) + minFloorArea;
+
+  // Using golden ratio (φ ≈ 1.618)
+  const phi = 1.618033988749895;
+
+  // Calculate the shorter side using the golden ratio
+  // If width/height = φ, then height = width/φ
+  // And since width * height = area, we can solve for width:
+  // width * (width/φ) = area
+  // width² = area * φ
+  // width = √(area * φ)
+  const width = Math.sqrt(targetArea * phi);
+
+  // Round to nearest integer
+  let floorCols = Math.round(width);
+  let floorRows = Math.round(targetArea / floorCols);
+
+  // Ensure dimensions are at least 3 (minimum width-2)
+  if (floorCols < 3 || floorRows < 3) {
+    floorRows = 3;
+    floorCols = 3;
+  }
+  // sideHeight: 2 (60%), 1 (30%), 3 (10%)
+  const sideHeightRoll = Math.random();
+  const sideHeight = sideHeightRoll < 0.6 ? 2 : (sideHeightRoll < 0.9 ? 1 : 3);
+  const tileRoll = Math.floor(Math.random() * 31);
+  console.log("tileRoll", tileRoll);
+  return {
+    room: {
+      width: floorCols + 2,
+      overHeight: floorRows + 3 + sideHeight,
+      sideHeight,
+      // Generate valid door position (>= 2 and < width-3)
+      doorPosition: Math.floor(Math.random() * (floorCols - 5)) + 2
+    },
+    tileOffset: (tileRoll % 4) * 7 + Math.floor(tileRoll / 4) * 322
+  };
+}
 
 export class Game extends Scene {
   private player: Player | null = null;
@@ -36,12 +87,13 @@ export class Game extends Scene {
     return new Phaser.Math.Vector2(defaultSpawnPoint.x, defaultSpawnPoint.y);
   }
 
-  private async handleDoorActivation(door: { x: number; y: number }) {
+  private async handleDoorActivation(door: { x: number; y: number; house: HouseDescription }) {
     // Fade out and transition to RandomHouse scene
     this.cameras.main.fade(500, 0, 0, 0);
     await new Promise(resolve => this.cameras.main.once('camerafadeoutcomplete', resolve));
 
-    this.scene.start('RandomHouse', {
+    this.scene.start('DynamicHouse', {
+      house: door.house,
       onReturn: async (houseScene: Scene) => {
         // Calculate spawn point in front of the door
         const spawnX = door.x * 32 + 16; // Center of door tile

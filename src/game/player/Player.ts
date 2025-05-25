@@ -63,9 +63,9 @@ export class Player extends Events.EventEmitter {
 
   static createAnimations(anims: Phaser.Animations.AnimationManager) {
     anims.create({
-      key: "misa-left-walk",
-      frames: anims.generateFrameNames("atlas", {
-        prefix: "misa-left-walk.",
+      key: "misa_left_walk",
+      frames: anims.generateFrameNames("atlas-16px", {
+        prefix: "misa_left_walk.",
         start: 0,
         end: 3,
         zeroPad: 3,
@@ -74,9 +74,9 @@ export class Player extends Events.EventEmitter {
       repeat: -1,
     });
     anims.create({
-      key: "misa-right-walk",
-      frames: anims.generateFrameNames("atlas", {
-        prefix: "misa-right-walk.",
+      key: "misa_right_walk",
+      frames: anims.generateFrameNames("atlas-16px", {
+        prefix: "misa_right_walk.",
         start: 0,
         end: 3,
         zeroPad: 3,
@@ -85,9 +85,9 @@ export class Player extends Events.EventEmitter {
       repeat: -1,
     });
     anims.create({
-      key: "misa-front-walk",
-      frames: anims.generateFrameNames("atlas", {
-        prefix: "misa-front-walk.",
+      key: "misa_front_walk",
+      frames: anims.generateFrameNames("atlas-16px", {
+        prefix: "misa_front_walk.",
         start: 0,
         end: 3,
         zeroPad: 3,
@@ -96,9 +96,9 @@ export class Player extends Events.EventEmitter {
       repeat: -1,
     });
     anims.create({
-      key: "misa-back-walk",
-      frames: anims.generateFrameNames("atlas", {
-        prefix: "misa-back-walk.",
+      key: "misa_back_walk",
+      frames: anims.generateFrameNames("atlas-16px", {
+        prefix: "misa_back_walk.",
         start: 0,
         end: 3,
         zeroPad: 3,
@@ -113,7 +113,7 @@ export class Player extends Events.EventEmitter {
     super();
 
     this.sprite = scene.physics.add
-      .sprite(position.x, position.y, "atlas", "misa-back")
+      .sprite(position.x, position.y, "atlas-16px", "misa_back")
       .setSize(26, 40)
       .setOffset(4, 24);
     if (!this.sprite.body) {
@@ -281,22 +281,22 @@ export class Player extends Events.EventEmitter {
       switch (data.direction) {
           case Direction.UP:
               body.setVelocityY(-data.speed);
-              this.sprite.anims.play("misa-back-walk", true);
+              this.sprite.anims.play("misa_back_walk", true);
               this.facingDirection = Direction.UP;
               break;
           case Direction.DOWN:
               body.setVelocityY(data.speed);
-              this.sprite.anims.play("misa-front-walk", true);
+              this.sprite.anims.play("misa_front_walk", true);
               this.facingDirection = Direction.DOWN;
               break;
           case Direction.LEFT:
               body.setVelocityX(-data.speed);
-              this.sprite.anims.play("misa-left-walk", true);
+              this.sprite.anims.play("misa_left_walk", true);
               this.facingDirection = Direction.LEFT;
               break;
           case Direction.RIGHT:
               body.setVelocityX(data.speed);
-              this.sprite.anims.play("misa-right-walk", true);
+              this.sprite.anims.play("misa_right_walk", true);
               this.facingDirection = Direction.RIGHT;
               break;
       }
@@ -312,16 +312,16 @@ export class Player extends Events.EventEmitter {
   private setTextureForDirection(direction: Direction) {
     switch (direction) {
       case Direction.LEFT:
-        this.sprite.setTexture("atlas", "misa-left");
+        this.sprite.setTexture("atlas-16px", "misa_left");
         break;
       case Direction.RIGHT:
-        this.sprite.setTexture("atlas", "misa-right");
+        this.sprite.setTexture("atlas-16px", "misa_right");
         break;
       case Direction.UP:
-        this.sprite.setTexture("atlas", "misa-back");
+        this.sprite.setTexture("atlas-16px", "misa_back");
         break;
       case Direction.DOWN:
-        this.sprite.setTexture("atlas", "misa-front");
+        this.sprite.setTexture("atlas-16px", "misa_front");
         break;
     }
   }

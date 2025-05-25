@@ -1,4 +1,4 @@
-import { RoomTiling, RoomDescription } from './RoomTiling';
+import { RoomTiling, RoomDimensions } from './RoomTiling';
 
 describe('RoomTiling', () => {
   // Helper function to convert tile numbers to ASCII characters for visualization
@@ -63,7 +63,7 @@ describe('RoomTiling', () => {
   };
 
   it('should generate correct tiles for the smallest possible room', () => {
-    const room: RoomDescription = {
+    const room: RoomDimensions = {
       width: 6,
       overHeight: 4,
       sideHeight: 1,
@@ -86,7 +86,7 @@ describe('RoomTiling', () => {
   });
 
   it('should generate correct tiles for the smallest possible room with sideHeight of 2', () => {
-    const room: RoomDescription = {
+    const room: RoomDimensions = {
       width: 6,
       overHeight: 5,
       sideHeight: 2,
@@ -111,7 +111,7 @@ describe('RoomTiling', () => {
   });
 
   it('should generate correct tiles the smallest room with space on either side of the door and sideHeight of 2', () => {
-    const room: RoomDescription = {
+    const room: RoomDimensions = {
       width: 8,
       overHeight: 6,
       sideHeight: 2,
@@ -137,7 +137,7 @@ describe('RoomTiling', () => {
   });
 
   it('should generate correct tiles for a room with sideHeight of 3 and the door as far left as possible', () => {
-    const room: RoomDescription = {
+    const room: RoomDimensions = {
       width: 8,
       overHeight: 6,
       sideHeight: 3,
@@ -165,7 +165,7 @@ describe('RoomTiling', () => {
 
   describe('error handling', () => {
     it('should throw error for widths that are too small', () => {
-      const room: RoomDescription = {
+      const room: RoomDimensions = {
         width: 5,
         overHeight: 4,
         sideHeight: 1,
@@ -177,7 +177,7 @@ describe('RoomTiling', () => {
     });
 
     it('should throw error for door positions that are too far to the left', () => {
-      const room: RoomDescription = {
+      const room: RoomDimensions = {
         width: 6,
         overHeight: 4,
         sideHeight: 1,
@@ -189,7 +189,7 @@ describe('RoomTiling', () => {
     });
 
     it('should throw error for door positions that are too far right', () => {
-      const room: RoomDescription = {
+      const room: RoomDimensions = {
         width: 6,
         overHeight: 4,
         sideHeight: 1,
@@ -201,7 +201,7 @@ describe('RoomTiling', () => {
     });
 
     it('should throw error for sideHeights that are too small', () => {
-      const room: RoomDescription = {
+      const room: RoomDimensions = {
         width: 6,
         overHeight: 4,
         sideHeight: 0,
@@ -213,7 +213,7 @@ describe('RoomTiling', () => {
     });
 
     it('should throw error for overHeights too small', () => {
-      const room: RoomDescription = {
+      const room: RoomDimensions = {
         width: 6,
         overHeight: 3,
         sideHeight: 1,
@@ -225,7 +225,7 @@ describe('RoomTiling', () => {
     });
 
     it('should throw error for sideHeights that are too large', () => {
-      const room: RoomDescription = {
+      const room: RoomDimensions = {
         width: 6,
         overHeight: 4,
         sideHeight: 2,

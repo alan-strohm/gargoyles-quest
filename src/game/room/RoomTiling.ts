@@ -7,7 +7,7 @@
  * - overHeight >= 3 + sideHeight (to ensure room is large enough for walls and door)
  * - sideHeight >= 1 (height of wall tiles below the room, default is 1)
  */
-export interface RoomDescription {
+export interface RoomDimensions {
   width: number;
   overHeight: number;
   sideHeight: number;
@@ -40,7 +40,7 @@ export interface TileTypes {
 export class RoomTiling {
   constructor(private readonly tiles: TileTypes) {}
 
-  generateTiles(room: RoomDescription): number[] {
+  generateTiles(room: RoomDimensions): number[] {
     // Validate room dimensions
     if (room.width < 6) {
       throw new Error('Room width must be at least 6');
