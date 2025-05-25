@@ -30,8 +30,10 @@ export function createItem(id: string): Item {
 }
 
 // Create animations for all registered items
-export function createItemAnimations(anims: Phaser.Animations.AnimationManager): void {
-  Object.values(ITEMS).forEach(ItemClass => {
+export function createItemAnimations(
+  anims: Phaser.Animations.AnimationManager,
+): void {
+  Object.values(ITEMS).forEach((ItemClass) => {
     const item = new ItemClass();
     item.createAnimations(anims);
   });
@@ -58,7 +60,11 @@ export class Heart implements Item {
     });
   }
 
-  createSprite(scene: Scene, x: number, y: number): Phaser.Types.Physics.Arcade.SpriteWithStaticBody {
+  createSprite(
+    scene: Scene,
+    x: number,
+    y: number,
+  ): Phaser.Types.Physics.Arcade.SpriteWithStaticBody {
     const sprite = scene.physics.add
       .staticSprite(x, y, "atlas-16px", `heart-0`)
       .setSize(24, 24)
@@ -71,7 +77,6 @@ export class Heart implements Item {
     // TODO: Implement gem collection logic
     console.log(`Collected heart!`);
   }
-
 }
 
 // Register all gem types

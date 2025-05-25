@@ -6,7 +6,7 @@ import { Item, createItem } from "../items/Items";
 export interface HouseDescription {
   room: RoomDimensions;
   tileOffset: number;
-  items: { item: string | Item, tileX: number, tileY: number }[];
+  items: { item: string | Item; tileX: number; tileY: number }[];
 }
 
 const TILE_SIZE = 32;
@@ -16,7 +16,7 @@ export class DynamicHouse extends Scene {
   private worldLayer: Phaser.Tilemaps.TilemapLayer | null = null;
   private aboveLayer: Phaser.Tilemaps.TilemapLayer | null = null;
   private player: Player | null = null;
-  private items: { sprite: Phaser.GameObjects.Sprite, item: Item }[] = [];
+  private items: { sprite: Phaser.GameObjects.Sprite; item: Item }[] = [];
 
   constructor() {
     super("DynamicHouse");
@@ -47,14 +47,17 @@ export class DynamicHouse extends Scene {
       sideRightWall: wallBaseId + 140,
       sideBottomLeftCorner: wallBaseId + 184,
       sideBottomWall: wallBaseId + 185,
-      sideBottomRightCorner: wallBaseId + 186
+      sideBottomRightCorner: wallBaseId + 186,
     };
   }
 
   // onReturn will be called when the player exits the house.
-  async create(data: { house: HouseDescription, onReturn: (scene: Scene) => void }) {
+  async create(data: {
+    house: HouseDescription;
+    onReturn: (scene: Scene) => void;
+  }) {
     // Set black background
-    this.cameras.main.setBackgroundColor('#dcdcdc');
+    this.cameras.main.setBackgroundColor("#dcdcdc");
 
     const { room, tileOffset, items } = data.house;
     const { width, overHeight, sideHeight, doorPosition } = room;
@@ -67,7 +70,14 @@ export class DynamicHouse extends Scene {
       height: overHeight + sideHeight,
     });
 
-    const walls = map.addTilesetImage("walls", undefined, TILE_SIZE, TILE_SIZE, 0, 0);
+    const walls = map.addTilesetImage(
+      "walls",
+      undefined,
+      TILE_SIZE,
+      TILE_SIZE,
+      0,
+      0,
+    );
     if (!walls) {
       console.error("Failed to load tilesets");
       return;
@@ -122,7 +132,8 @@ export class DynamicHouse extends Scene {
       roomX + TILE_SIZE,
       roomY + TILE_SIZE * sideHeight,
       roomWidth - 2 * TILE_SIZE,
-      roomHeight - TILE_SIZE * (sideHeight-1));
+      roomHeight - TILE_SIZE * (sideHeight - 1),
+    );
 
     // Set the layer's position to center it
     this.belowLayer.setPosition(roomX, roomY);
@@ -130,7 +141,7 @@ export class DynamicHouse extends Scene {
     this.aboveLayer.setPosition(roomX, roomY);
 
     // Create player at the doorway
-    const playerX = roomX + (doorPosition * TILE_SIZE) + TILE_SIZE; // Center in the doorway
+    const playerX = roomX + doorPosition * TILE_SIZE + TILE_SIZE; // Center in the doorway
     const playerY = roomY + roomHeight - 2 * TILE_SIZE; // Bottom of the room
     this.player = new Player(this, new Phaser.Math.Vector2(playerX, playerY));
 
@@ -140,9 +151,9 @@ export class DynamicHouse extends Scene {
 
     // Create items at their tile positions
     items.forEach(({ item, tileX, tileY }) => {
-      const itemInstance = typeof item === 'string' ? createItem(item) : item;
-      const worldX = roomX + (tileX * TILE_SIZE) + TILE_SIZE / 2;
-      const worldY = roomY + (tileY * TILE_SIZE) + TILE_SIZE / 2;
+      const itemInstance = typeof item === "string" ? createItem(item) : item;
+      const worldX = roomX + tileX * TILE_SIZE + TILE_SIZE / 2;
+      const worldY = roomY + tileY * TILE_SIZE + TILE_SIZE / 2;
       const sprite = itemInstance.createSprite(this, worldX, worldY);
       if (this.player) {
         this.physics.add.collider(this.player.getSprite(), sprite);
@@ -155,8 +166,10 @@ export class DynamicHouse extends Scene {
       // Check if any item is at the activation point
       this.items.forEach(({ sprite, item }) => {
         const distance = Phaser.Math.Distance.Between(
-          point.x, point.y,
-          sprite.x, sprite.y
+          point.x,
+          point.y,
+          sprite.x,
+          sprite.y,
         );
         if (distance < TILE_SIZE) {
           item.activate(this);
@@ -165,20 +178,23 @@ export class DynamicHouse extends Scene {
     });
 
     // Create a zone for the door
-    const doorX = roomX + (doorPosition * TILE_SIZE) + TILE_SIZE; // Center of the door tile
+    const doorX = roomX + doorPosition * TILE_SIZE + TILE_SIZE; // Center of the door tile
     const doorY = roomY + roomHeight - TILE_SIZE / 2;
     const doorZone = this.add.zone(doorX, doorY, 2 * TILE_SIZE, TILE_SIZE);
     this.physics.add.existing(doorZone, true);
 
     // Wait a short delay before moving
-    await new Promise(resolve => this.time.delayedCall(100, resolve));
+    await new Promise((resolve) => this.time.delayedCall(100, resolve));
 
     // Move player up one tile
-    this.player.emit(PlayerEvents.MOVE, { direction: Direction.UP, speed: this.player.getSpeed() });
+    this.player.emit(PlayerEvents.MOVE, {
+      direction: Direction.UP,
+      speed: this.player.getSpeed(),
+    });
 
     // Wait for movement to complete
     const tileTime = (TILE_SIZE / this.player.getSpeed()) * 1000;
-    await new Promise(resolve => this.time.delayedCall(tileTime, resolve));
+    await new Promise((resolve) => this.time.delayedCall(tileTime, resolve));
 
     this.player.emit(PlayerEvents.STOP);
 
@@ -194,7 +210,7 @@ export class DynamicHouse extends Scene {
         }
       },
       undefined,
-      this
+      this,
     );
   }
 
@@ -209,13 +225,16 @@ export class DynamicHouse extends Scene {
         const tileId = generatedTiles[y * width + x];
         if (tileId === tileTypes.floor) {
           this.belowLayer?.putTileAt(tileId, x, y);
-        } else if (y < (overHeight-1)) {
+        } else if (y < overHeight - 1) {
           this.worldLayer?.putTileAt(tileId, x, y);
         } else {
-          this.aboveLayer?.putTileAt(tileId, x, y).setCollision(
-            tileId === tileTypes.sideBottomWall ||
-            tileId === tileTypes.sideBottomLeftCorner ||
-            tileId === tileTypes.sideBottomRightCorner);
+          this.aboveLayer
+            ?.putTileAt(tileId, x, y)
+            .setCollision(
+              tileId === tileTypes.sideBottomWall ||
+                tileId === tileTypes.sideBottomLeftCorner ||
+                tileId === tileTypes.sideBottomRightCorner,
+            );
         }
       }
     }

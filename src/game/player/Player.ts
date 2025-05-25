@@ -4,20 +4,20 @@ export enum Direction {
   UP = 1,
   RIGHT = 2,
   DOWN = 3,
-  LEFT = 4
+  LEFT = 4,
 }
 
 // Define the types of movement events you want to emit.
 export enum PlayerEvents {
-    MOVE = 'move',
-    STOP = 'stop',
-    ACTIVATE = 'activate'
+  MOVE = "move",
+  STOP = "stop",
+  ACTIVATE = "activate",
 }
 
 // Define the payload for the 'move' event.
 export interface MoveEventData {
-    direction: Direction;
-    speed: number;
+  direction: Direction;
+  speed: number;
 }
 
 const DRAG_THRESHOLD: number = 10; // Minimum distance to start movement
@@ -108,8 +108,11 @@ export class Player extends Events.EventEmitter {
     });
   }
 
-
-  constructor(scene: Scene, position: Phaser.Math.Vector2, facingDirection: Direction = Direction.UP) {
+  constructor(
+    scene: Scene,
+    position: Phaser.Math.Vector2,
+    facingDirection: Direction = Direction.UP,
+  ) {
     super();
 
     this.sprite = scene.physics.add
@@ -124,15 +127,15 @@ export class Player extends Events.EventEmitter {
     this.setTextureForDirection(facingDirection);
 
     const input = scene.input;
-    input.on('pointerdown', this.handlePointerDown, this);
-    input.on('pointermove', this.handlePointerMove, this);
-    input.on('pointerup', this.handlePointerUp, this);
+    input.on("pointerdown", this.handlePointerDown, this);
+    input.on("pointermove", this.handlePointerMove, this);
+    input.on("pointerup", this.handlePointerUp, this);
 
     // Register cleanup for pointer handlers
     this.registerCleanupCallback(() => {
-      input.off('pointerdown', this.handlePointerDown, this);
-      input.off('pointermove', this.handlePointerMove, this);
-      input.off('pointerup', this.handlePointerUp, this);
+      input.off("pointerdown", this.handlePointerDown, this);
+      input.off("pointermove", this.handlePointerMove, this);
+      input.off("pointerup", this.handlePointerUp, this);
     });
 
     // Register event listeners
@@ -147,33 +150,43 @@ export class Player extends Events.EventEmitter {
   }
 
   private setupKeyboardInput(keyboard: Phaser.Input.Keyboard.KeyboardPlugin) {
-    keyboard.on('keydown', (event: KeyboardEvent) => {
+    keyboard.on("keydown", (event: KeyboardEvent) => {
       // Add the key to active keys
       this.activeKeys.add(event.code);
 
-      if (event.code === 'Space') {
+      if (event.code === "Space") {
         this.handleActivation();
         return;
       }
 
-      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.code)) {
+      if (
+        ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.code)
+      ) {
         const lastDirection = this.getLastPressedDirection();
         if (lastDirection !== null) {
-          this.emit(PlayerEvents.MOVE, { direction: lastDirection, speed: this.speed });
+          this.emit(PlayerEvents.MOVE, {
+            direction: lastDirection,
+            speed: this.speed,
+          });
         }
       }
     });
 
-    keyboard.on('keyup', (event: KeyboardEvent) => {
+    keyboard.on("keyup", (event: KeyboardEvent) => {
       // Remove the key from active keys
       this.activeKeys.delete(event.code);
 
       // Only handle movement keys
-      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.code)) {
+      if (
+        ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.code)
+      ) {
         // If there are still direction keys pressed, move in that direction
         const remainingDirection = this.getLastPressedDirection();
         if (remainingDirection) {
-          this.emit(PlayerEvents.MOVE, { direction: remainingDirection, speed: this.speed });
+          this.emit(PlayerEvents.MOVE, {
+            direction: remainingDirection,
+            speed: this.speed,
+          });
         } else {
           this.emit(PlayerEvents.STOP);
         }
@@ -182,17 +195,17 @@ export class Player extends Events.EventEmitter {
 
     // Register cleanup for keyboard handlers
     this.registerCleanupCallback(() => {
-      keyboard.off('keydown');
-      keyboard.off('keyup');
+      keyboard.off("keydown");
+      keyboard.off("keyup");
     });
   }
 
   private getLastPressedDirection(): Direction | null {
     // Check keys in reverse order of priority (right, left, down, up)
-    if (this.activeKeys.has('ArrowRight')) return Direction.RIGHT;
-    if (this.activeKeys.has('ArrowLeft')) return Direction.LEFT;
-    if (this.activeKeys.has('ArrowDown')) return Direction.DOWN;
-    if (this.activeKeys.has('ArrowUp')) return Direction.UP;
+    if (this.activeKeys.has("ArrowRight")) return Direction.RIGHT;
+    if (this.activeKeys.has("ArrowLeft")) return Direction.LEFT;
+    if (this.activeKeys.has("ArrowDown")) return Direction.DOWN;
+    if (this.activeKeys.has("ArrowUp")) return Direction.UP;
     return null;
   }
 
@@ -205,13 +218,25 @@ export class Player extends Events.EventEmitter {
 
     switch (this.facingDirection) {
       case Direction.UP:
-        return new Phaser.Math.Vector2(centerX, centerY - halfHeight - ACTIVATION_DISTANCE);
+        return new Phaser.Math.Vector2(
+          centerX,
+          centerY - halfHeight - ACTIVATION_DISTANCE,
+        );
       case Direction.RIGHT:
-        return new Phaser.Math.Vector2(centerX + halfWidth + ACTIVATION_DISTANCE, centerY);
+        return new Phaser.Math.Vector2(
+          centerX + halfWidth + ACTIVATION_DISTANCE,
+          centerY,
+        );
       case Direction.DOWN:
-        return new Phaser.Math.Vector2(centerX, centerY + halfHeight + ACTIVATION_DISTANCE);
+        return new Phaser.Math.Vector2(
+          centerX,
+          centerY + halfHeight + ACTIVATION_DISTANCE,
+        );
       case Direction.LEFT:
-        return new Phaser.Math.Vector2(centerX - halfWidth - ACTIVATION_DISTANCE, centerY);
+        return new Phaser.Math.Vector2(
+          centerX - halfWidth - ACTIVATION_DISTANCE,
+          centerY,
+        );
     }
   }
 
@@ -221,7 +246,7 @@ export class Player extends Events.EventEmitter {
     }
 
     const activationPoint = this.getActivationPoint();
-    this.emit('activate', activationPoint);
+    this.emit("activate", activationPoint);
   }
 
   private isMoving(): boolean {
@@ -275,38 +300,38 @@ export class Player extends Events.EventEmitter {
   }
 
   private handleMove(data: MoveEventData) {
-      const body = this.sprite.body as Phaser.Physics.Arcade.Body;
-      body.setVelocity(0);
+    const body = this.sprite.body as Phaser.Physics.Arcade.Body;
+    body.setVelocity(0);
 
-      switch (data.direction) {
-          case Direction.UP:
-              body.setVelocityY(-data.speed);
-              this.sprite.anims.play("misa_back_walk", true);
-              this.facingDirection = Direction.UP;
-              break;
-          case Direction.DOWN:
-              body.setVelocityY(data.speed);
-              this.sprite.anims.play("misa_front_walk", true);
-              this.facingDirection = Direction.DOWN;
-              break;
-          case Direction.LEFT:
-              body.setVelocityX(-data.speed);
-              this.sprite.anims.play("misa_left_walk", true);
-              this.facingDirection = Direction.LEFT;
-              break;
-          case Direction.RIGHT:
-              body.setVelocityX(data.speed);
-              this.sprite.anims.play("misa_right_walk", true);
-              this.facingDirection = Direction.RIGHT;
-              break;
-      }
+    switch (data.direction) {
+      case Direction.UP:
+        body.setVelocityY(-data.speed);
+        this.sprite.anims.play("misa_back_walk", true);
+        this.facingDirection = Direction.UP;
+        break;
+      case Direction.DOWN:
+        body.setVelocityY(data.speed);
+        this.sprite.anims.play("misa_front_walk", true);
+        this.facingDirection = Direction.DOWN;
+        break;
+      case Direction.LEFT:
+        body.setVelocityX(-data.speed);
+        this.sprite.anims.play("misa_left_walk", true);
+        this.facingDirection = Direction.LEFT;
+        break;
+      case Direction.RIGHT:
+        body.setVelocityX(data.speed);
+        this.sprite.anims.play("misa_right_walk", true);
+        this.facingDirection = Direction.RIGHT;
+        break;
+    }
   }
 
   private handleStop() {
-      const body = this.sprite.body as Phaser.Physics.Arcade.Body;
-      body.setVelocity(0);
-      this.sprite.anims.stop();
-      this.setTextureForDirection(this.facingDirection);
+    const body = this.sprite.body as Phaser.Physics.Arcade.Body;
+    body.setVelocity(0);
+    this.sprite.anims.stop();
+    this.setTextureForDirection(this.facingDirection);
   }
 
   private setTextureForDirection(direction: Direction) {

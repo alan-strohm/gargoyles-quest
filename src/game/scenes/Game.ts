@@ -5,15 +5,25 @@ import { HouseDescription } from "./DynamicHouse";
 import { Heart } from "../items/Items";
 
 const doors = [
-  { x: 8, y: 34 }, { x: 19, y: 34 }, { x: 21, y: 25 }, { x: 14, y: 25 },
-  { x: 6, y: 25 }, { x: 1, y: 25 }, { x: 27, y: 16 }, { x: 19, y: 16 },
-  { x: 10, y: 16 }, { x: 6, y: 8 }, { x: 13, y: 8 }, { x: 22, y: 8 },
-  { x: 13, y: 3 }, { x: 6, y: 3 }
-].map(door => {
+  { x: 8, y: 34 },
+  { x: 19, y: 34 },
+  { x: 21, y: 25 },
+  { x: 14, y: 25 },
+  { x: 6, y: 25 },
+  { x: 1, y: 25 },
+  { x: 27, y: 16 },
+  { x: 19, y: 16 },
+  { x: 10, y: 16 },
+  { x: 6, y: 8 },
+  { x: 13, y: 8 },
+  { x: 22, y: 8 },
+  { x: 13, y: 3 },
+  { x: 6, y: 3 },
+].map((door) => {
   const house = randomHouse();
   return {
     ...door,
-    house
+    house,
   };
 });
 
@@ -25,16 +35,20 @@ const { room } = macguffinHouse;
 // Place macguffin at a random position within the floor area
 // Add 1 to x and y to account for walls, and subtract 1 from width and height to keep away from walls
 const macguffinX = Math.floor(Math.random() * (room.width - 4)) + 2;
-const macguffinY = Math.floor(Math.random() * (room.overHeight - 4)) + 2 + room.sideHeight;
+const macguffinY =
+  Math.floor(Math.random() * (room.overHeight - 4)) + 2 + room.sideHeight;
 
-macguffinHouse.items = [{ item: new Heart(), tileX: macguffinX, tileY: macguffinY }];
+macguffinHouse.items = [
+  { item: new Heart(), tileX: macguffinX, tileY: macguffinY },
+];
 
 function randomHouse(): HouseDescription {
   const minFloorArea = 75;
   const maxFloorArea = 200;
 
   // Choose a target area within the range
-  const targetArea = Math.floor(Math.random() * (maxFloorArea - minFloorArea)) + minFloorArea;
+  const targetArea =
+    Math.floor(Math.random() * (maxFloorArea - minFloorArea)) + minFloorArea;
 
   // Using golden ratio (φ ≈ 1.618)
   const phi = 1.618033988749895;
@@ -58,7 +72,7 @@ function randomHouse(): HouseDescription {
   }
   // sideHeight: 2 (60%), 1 (30%), 3 (10%)
   const sideHeightRoll = Math.random();
-  const sideHeight = sideHeightRoll < 0.6 ? 2 : (sideHeightRoll < 0.9 ? 1 : 3);
+  const sideHeight = sideHeightRoll < 0.6 ? 2 : sideHeightRoll < 0.9 ? 1 : 3;
   const tileRoll = Math.floor(Math.random() * 30);
   console.log("tileRoll", tileRoll);
   return {
@@ -67,10 +81,10 @@ function randomHouse(): HouseDescription {
       overHeight: floorRows + 3 + sideHeight,
       sideHeight,
       // Generate valid door position (>= 2 and < width-3)
-      doorPosition: Math.floor(Math.random() * (floorCols - 5)) + 2
+      doorPosition: Math.floor(Math.random() * (floorCols - 5)) + 2,
     },
     tileOffset: (tileRoll % 4) * 7 + Math.floor(tileRoll / 4) * 322,
-    items: []
+    items: [],
   };
 }
 
@@ -82,7 +96,10 @@ export class Game extends Scene {
     super("Game");
   }
 
-  private getSpawnPoint(map: Phaser.Tilemaps.Tilemap, spawnPoint?: Phaser.Math.Vector2): Phaser.Math.Vector2 {
+  private getSpawnPoint(
+    map: Phaser.Tilemaps.Tilemap,
+    spawnPoint?: Phaser.Math.Vector2,
+  ): Phaser.Math.Vector2 {
     // If a custom spawn point was provided, use it
     if (spawnPoint) {
       return spawnPoint;
@@ -94,19 +111,29 @@ export class Game extends Scene {
       (obj) => obj.name === "Spawn Point",
     );
 
-    if (!defaultSpawnPoint || typeof defaultSpawnPoint.x !== 'number' || typeof defaultSpawnPoint.y !== 'number') {
+    if (
+      !defaultSpawnPoint ||
+      typeof defaultSpawnPoint.x !== "number" ||
+      typeof defaultSpawnPoint.y !== "number"
+    ) {
       throw new Error("Failed to find spawn point");
     }
 
     return new Phaser.Math.Vector2(defaultSpawnPoint.x, defaultSpawnPoint.y);
   }
 
-  private async handleDoorActivation(door: { x: number; y: number; house: HouseDescription }) {
+  private async handleDoorActivation(door: {
+    x: number;
+    y: number;
+    house: HouseDescription;
+  }) {
     // Fade out and transition to RandomHouse scene
     this.cameras.main.fade(500, 0, 0, 0);
-    await new Promise(resolve => this.cameras.main.once('camerafadeoutcomplete', resolve));
+    await new Promise((resolve) =>
+      this.cameras.main.once("camerafadeoutcomplete", resolve),
+    );
 
-    this.scene.start('DynamicHouse', {
+    this.scene.start("DynamicHouse", {
       house: door.house,
       onReturn: async (houseScene: Scene) => {
         // Calculate spawn point in front of the door
@@ -115,17 +142,22 @@ export class Game extends Scene {
 
         // Fade in and return to game
         houseScene.cameras.main.fade(500, 0, 0, 0);
-        await new Promise(resolve => houseScene.cameras.main.once('camerafadeoutcomplete', resolve));
+        await new Promise((resolve) =>
+          houseScene.cameras.main.once("camerafadeoutcomplete", resolve),
+        );
 
-        houseScene.scene.start('Game', {
+        houseScene.scene.start("Game", {
           spawnPoint: new Phaser.Math.Vector2(spawnX, spawnY),
-          initialDirection: Direction.DOWN
+          initialDirection: Direction.DOWN,
         });
-      }
+      },
     });
   }
 
-  create(data?: { spawnPoint?: Phaser.Math.Vector2, initialDirection?: Direction }) {
+  create(data?: {
+    spawnPoint?: Phaser.Math.Vector2;
+    initialDirection?: Direction;
+  }) {
     const map = this.make.tilemap({ key: "map" });
 
     // Parameters are the name you gave the tileset in Tiled and then the key of the tileset image in
@@ -156,13 +188,13 @@ export class Game extends Scene {
     this.player = new Player(this, spawnPoint, data?.initialDirection);
 
     // Listen for player activation events
-    this.player.on('activate', (point: Phaser.Math.Vector2) => {
+    this.player.on("activate", (point: Phaser.Math.Vector2) => {
       const tileX = map.worldToTileX(point.x);
       const tileY = map.worldToTileY(point.y);
       console.log(point, tileX, tileY);
 
       // Check if activation point matches any door
-      const door = doors.find(door => door.x === tileX && door.y === tileY);
+      const door = doors.find((door) => door.x === tileX && door.y === tileY);
 
       if (door) {
         this.handleDoorActivation(door);
@@ -178,7 +210,7 @@ export class Game extends Scene {
 
     // Help text that has a "fixed" position on the screen
     this.add
-      .text(16, 16, 'Arrow keys to move\nSpace to interact\nFind the heart!', {
+      .text(16, 16, "Arrow keys to move\nSpace to interact\nFind the heart!", {
         font: "18px monospace",
         color: "#000000",
         padding: { x: 20, y: 10 },

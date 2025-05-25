@@ -43,16 +43,16 @@ export class RoomTiling {
   generateTiles(room: RoomDimensions): number[] {
     // Validate room dimensions
     if (room.width < 6) {
-      throw new Error('Room width must be at least 6');
+      throw new Error("Room width must be at least 6");
     }
     if (room.doorPosition < 2 || room.doorPosition >= room.width - 3) {
-      throw new Error('Door position must be at least 2 and less than width-3');
+      throw new Error("Door position must be at least 2 and less than width-3");
     }
     if (room.sideHeight < 1) {
-      throw new Error('Side height must be at least 1');
+      throw new Error("Side height must be at least 1");
     }
     if (room.overHeight < 3 + room.sideHeight) {
-      throw new Error('Over height must be at least 3 + sideHeight');
+      throw new Error("Over height must be at least 3 + sideHeight");
     }
 
     // Calculate total height and create array for all tiles
@@ -91,7 +91,8 @@ export class RoomTiling {
       const rowPositionInOver = y; // 0-indexed position within over section
 
       // Check if this row should be a decoration row
-      const isMidWallRow = rowPositionInOver > 0 && rowPositionInOver <= midWallRows;
+      const isMidWallRow =
+        rowPositionInOver > 0 && rowPositionInOver <= midWallRows;
       const isBottomWallRow = rowPositionInOver === bottomWallRow;
 
       for (let x = 0; x < room.width; x++) {
@@ -101,7 +102,8 @@ export class RoomTiling {
         const isDoor = x === room.doorPosition || x === room.doorPosition + 1;
         const isNextToDoorLeft = x === room.doorPosition - 1;
         const isNextToDoorRight = x === room.doorPosition + 2;
-        const isDoorPath = isDoor && (isBottomOverBorder || y >= room.overHeight);
+        const isDoorPath =
+          isDoor && (isBottomOverBorder || y >= room.overHeight);
 
         if (isDoorPath) {
           continue; // Keep door as floor tile
@@ -111,19 +113,27 @@ export class RoomTiling {
         if (isOverSection) {
           if (isTopBorder) {
             // Top border wall
-            if (isLeftEdge) result[getIndex(x, y)] = this.tiles.overTopLeftCorner;
-            else if (isRightEdge) result[getIndex(x, y)] = this.tiles.overTopRightCorner;
+            if (isLeftEdge)
+              result[getIndex(x, y)] = this.tiles.overTopLeftCorner;
+            else if (isRightEdge)
+              result[getIndex(x, y)] = this.tiles.overTopRightCorner;
             else result[getIndex(x, y)] = this.tiles.overTopWall;
           } else if (isBottomOverBorder) {
             // Bottom border wall
-            if (isLeftEdge) result[getIndex(x, y)] = this.tiles.overBottomLeftCorner;
-            else if (isRightEdge) result[getIndex(x, y)] = this.tiles.overBottomRightCorner;
-            else if (isNextToDoorLeft) result[getIndex(x, y)] = this.tiles.overInternalRightCorner;
-            else if (isNextToDoorRight) result[getIndex(x, y)] = this.tiles.overInternalLeftCorner;
+            if (isLeftEdge)
+              result[getIndex(x, y)] = this.tiles.overBottomLeftCorner;
+            else if (isRightEdge)
+              result[getIndex(x, y)] = this.tiles.overBottomRightCorner;
+            else if (isNextToDoorLeft)
+              result[getIndex(x, y)] = this.tiles.overInternalRightCorner;
+            else if (isNextToDoorRight)
+              result[getIndex(x, y)] = this.tiles.overInternalLeftCorner;
             else result[getIndex(x, y)] = this.tiles.overBottomWall;
           } else if (isLeftEdge || isRightEdge) {
             // Side walls
-            result[getIndex(x, y)] = isLeftEdge ? this.tiles.overLeftWall : this.tiles.overRightWall;
+            result[getIndex(x, y)] = isLeftEdge
+              ? this.tiles.overLeftWall
+              : this.tiles.overRightWall;
           } else if (isMidWallRow) {
             // Decoration rows with sideMidWall
             result[getIndex(x, y)] = this.tiles.sideMidWall;
@@ -137,15 +147,20 @@ export class RoomTiling {
         else {
           if (isBottomSideBorder) {
             // Bottom row of side section - corners and edges
-            if (isLeftEdge) result[getIndex(x, y)] = this.tiles.sideBottomLeftCorner;
-            else if (isRightEdge) result[getIndex(x, y)] = this.tiles.sideBottomRightCorner;
-            else if (isNextToDoorLeft) result[getIndex(x, y)] = this.tiles.sideBottomRightCorner;
-            else if (isNextToDoorRight) result[getIndex(x, y)] = this.tiles.sideBottomLeftCorner;
+            if (isLeftEdge)
+              result[getIndex(x, y)] = this.tiles.sideBottomLeftCorner;
+            else if (isRightEdge)
+              result[getIndex(x, y)] = this.tiles.sideBottomRightCorner;
+            else if (isNextToDoorLeft)
+              result[getIndex(x, y)] = this.tiles.sideBottomRightCorner;
+            else if (isNextToDoorRight)
+              result[getIndex(x, y)] = this.tiles.sideBottomLeftCorner;
             else result[getIndex(x, y)] = this.tiles.sideBottomWall;
           } else {
             // Non-bottom side section rows - vertical walls and interior
             if (isLeftEdge) result[getIndex(x, y)] = this.tiles.sideLeftWall;
-            else if (isRightEdge) result[getIndex(x, y)] = this.tiles.sideRightWall;
+            else if (isRightEdge)
+              result[getIndex(x, y)] = this.tiles.sideRightWall;
             else if (isNextToDoorLeft) {
               // Vertical lines next to door
               result[getIndex(x, y)] = this.tiles.sideRightWall;

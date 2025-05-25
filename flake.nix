@@ -20,17 +20,23 @@
           inherit system;
           config.allowUnfree = true;
         };
-        scale2x = with pkgs; stdenv.mkDerivation rec {
-          pname = "scale2x";
-          version = "v4.0";
-          src = fetchFromGitHub {
-            owner = "amadvance";
-            repo = pname;
-            rev = "9eeee4fdd788dd77b71ff56910aac9679fa48201";
-            hash = "sha256-k03lQbzMJf5OAq531/mvHMHmTL6MT+nOqUZ5ZvQ98nU=";
+        scale2x =
+          with pkgs;
+          stdenv.mkDerivation rec {
+            pname = "scale2x";
+            version = "v4.0";
+            src = fetchFromGitHub {
+              owner = "amadvance";
+              repo = pname;
+              rev = "9eeee4fdd788dd77b71ff56910aac9679fa48201";
+              hash = "sha256-k03lQbzMJf5OAq531/mvHMHmTL6MT+nOqUZ5ZvQ98nU=";
+            };
+            nativeBuildInputs = [
+              autoreconfHook
+              libz
+              libpng
+            ];
           };
-          nativeBuildInputs = [ autoreconfHook libz libpng ];
-        };
         treefmtEval = treefmt-nix.lib.evalModule pkgs {
           projectRootFile = "flake.nix";
           programs.nixfmt.enable = true;
