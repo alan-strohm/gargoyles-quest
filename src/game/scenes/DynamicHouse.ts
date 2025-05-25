@@ -75,8 +75,8 @@ export class DynamicHouse extends Scene {
       undefined,
       TILE_SIZE,
       TILE_SIZE,
-      0,
-      0,
+      2,
+      4,
     );
     if (!walls) {
       console.error("Failed to load tilesets");

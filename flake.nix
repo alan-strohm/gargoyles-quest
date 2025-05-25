@@ -43,16 +43,18 @@
           programs.prettier.enable = true;
         };
         gargoyles-quest = pkgs.callPackage ./package.nix { };
+        tile-extruder = pkgs.callPackage ./tile-extruder.nix { };
       in
       {
         packages = {
-          inherit gargoyles-quest scale2x;
+          inherit gargoyles-quest scale2x tile-extruder;
           default = gargoyles-quest;
         };
         formatter = treefmtEval.config.build.wrapper;
         devShells.default = pkgs.mkShell {
           inputsFrom = [ gargoyles-quest ];
           packages = [
+            tile-extruder
             scale2x
             pkgs.tiled
             pkgs.texturepacker
