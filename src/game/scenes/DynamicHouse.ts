@@ -60,6 +60,8 @@ export class DynamicHouse extends Scene {
     this.cameras.main.setBackgroundColor("#dcdcdc");
 
     const { room, tileOffset, items } = data.house;
+    console.log("creating house with tileOffset:", tileOffset);
+
     const { width, overHeight, sideHeight, doorPosition } = room;
 
     // Create tilemap with room dimensions
@@ -92,7 +94,6 @@ export class DynamicHouse extends Scene {
     }
     this.aboveLayer.setDepth(10);
 
-    console.log("tileOffset", tileOffset);
     this.tileRoom(room, tileOffset);
 
     // Set up keyboard handler for cycling through wall styles

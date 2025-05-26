@@ -73,9 +73,12 @@ export class Heart implements Item {
     return sprite;
   }
 
-  activate(scene: Scene): void {
-    // TODO: Implement gem collection logic
-    console.log(`Collected heart!`);
+  async activate(scene: Scene): Promise<void> {
+    scene.cameras.main.fade(500, 0, 0, 0);
+    await new Promise((resolve) =>
+      scene.cameras.main.once("camerafadeoutcomplete", resolve),
+    );
+    scene.scene.start("Game");
   }
 }
 
