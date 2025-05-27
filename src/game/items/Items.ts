@@ -78,7 +78,7 @@ export class Heart implements Item {
     await new Promise((resolve) =>
       scene.cameras.main.once("camerafadeoutcomplete", resolve),
     );
-    scene.scene.start("Game");
+    scene.scene.start("Game", null);
   }
 }
 

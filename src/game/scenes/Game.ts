@@ -93,6 +93,7 @@ export class Game extends Scene {
   init(data: {
     spawnPoint?: Phaser.Math.Vector2;
   }) {
+    console.log("starting main scene with data", data);
     if (data.spawnPoint !== undefined) {
       return;
     }
