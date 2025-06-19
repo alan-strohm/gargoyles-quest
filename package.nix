@@ -14,7 +14,7 @@ buildNpmPackage rec {
   src = ./.;
 
   #npmDepsHash = "sha256-EVzr3gaWB8knfI0PHA8Q7XnIOSgAux598TV9UpWp7/8=";
-  npmDepsHash = "sha256-zvYIvvR5luN5oxQQz6UWmdSsGvBEIFspzKPtoO45cp0=";
+  npmDepsHash = "sha256-rOLQXpnB+nrcROqPhq9CkdGuOPGj1MVtYrnzTNzj/z0=";
 
   # Useful for debugging, just run "nix-shell" and then "electron ."
   nativeBuildInputs = [
